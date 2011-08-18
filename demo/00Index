@@ -1,0 +1,4 @@
+gaussianexample  Most simple example of PAWL run on an univariate gaussian distribution
+trimodalexample  PAWL run on a trimodal distribution
+mixture2kexample PAWL run on the posterior distribution of a mixture model with 2 components
+mixture4kexample PAWL run on the posterior distribution of a mixture model with 4 components

@@ -1,0 +1,21 @@
+syntax: glob
+^*.R
+^*.csv
+^*.txt
+*.swp
+*.RData
+*.pdf
+*.png
+*~
+*.toc
+*.log
+*.aux
+*.o
+*.so
+*.out
+*-plots.R
+*-profile.txt
+
+syntax: regexp
+.*\#.*\#$
+

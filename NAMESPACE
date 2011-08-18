@@ -1,0 +1,10 @@
+useDynLib(PAWL, mixtureloglikelihood, mixturelogpriordensity)
+export(createMixtureTarget, createTrimodalTarget, adaptiveMH, preexplorationAMH, pawl,
+ConvertResults,
+PlotComp1vsComp2, PlotLogTheta, PlotFH, PlotAllVar, PlotDensComp1vsComp2, PlotHist,
+PlotHistBin, PlotNbins,
+getFrequencies)
+exportClasses(target, binning, tuningparameters)
+exportMethods(target, show, binning, tuningparameters)
+
+

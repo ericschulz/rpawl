@@ -1,0 +1,12 @@
+Package: PAWL
+Type: Package
+Title: Implementation of the PAWL algorithm
+Version: 0.3
+Date: 2011-08-11
+Author: Pierre
+Maintainer: Pierre <pierre.jacob@ensae.fr>
+Description: Implementation of the Parallel Adaptive Wang-Landau algorithm. Also implemented for comparison: parallel adaptive Metropolis-Hastings.
+Depends: mvtnorm 
+Suggests: ggplot2, doMC
+License: GPL (>= 2)
+LazyLoad: yes
