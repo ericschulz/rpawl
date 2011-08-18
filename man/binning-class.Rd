@@ -5,7 +5,7 @@
 \alias{binning}
 \alias{show,binning-method}
 
-\title{Class: binning}
+\title{Class \code{"binning"}}
 \description{
   This class holds all the parameters of the Parallel Adaptive Wang-Landau algorithm that are related to the bins:
   it includes the functions that take points and return the point locations with respect to the bins, parameters related to the number of bins, the split mechanism, the adaptation rate of the stochastic approximation schedule, etc.

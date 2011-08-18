@@ -36,6 +36,7 @@ preexplorationAMH(target, nchains, niterations)
   of the energy values seen during the exploration. This can be passed as the \code{binrange} argument of the
   \code{binning} class, see the \code{trimodal} example.}
 }
+
 %\references{
 %% ~put references to the literature/web site here ~
 %}

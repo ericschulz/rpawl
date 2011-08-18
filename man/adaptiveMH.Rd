@@ -11,31 +11,30 @@
 \usage{
 adaptiveMH(Target, AP)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{Target}{
-%%     ~~Describe \code{Target} here~~
+  \item{Target}{Object of class \code{"target"}: specifies the target distribution.
+      See the help of \code{target}. If the target is discrete, target must contain the slots \code{dproposal}, \code{rproposal} and \code{proposalparam} that specify the proposal kernel in the Metropolis-Hastings step. Otherwise the default is an adaptive gaussian random walk.
 }
-  \item{AP}{
-%%     ~~Describe \code{AP} here~~
+  \item{AP}{Object of class \code{"tuningparameters"}: specifies the number of chains, the number
+      of iterations, if the proposal should be adaptive or not. See the help of \code{tuningparameters}.
 }
 }
 %\details{
 %%%  ~~ If necessary, more details than the description above ~~
 %}
-%\value{
-%%%  ~Describe the value returned
-%%%  If it is a LIST, use
-%%%  \item{comp1 }{Description of 'comp1'}
-%%%  \item{comp2 }{Description of 'comp2'}
-%%% ...
-%}
+\value{
+    The function returns a list holding various information:
+    \item{allchains}{The full chain history.}
+    \item{alllogtarget}{The associated log density evaluations.}
+    \item{acceptrates}{The vector of acceptance rates at each step.}
+    \item{sigma}{The vector of the standard deviations used by the MH kernel along the iterations. If the proposal was adaptive, this allows to check how the adaptation behaved.}
+}
 %\references{
 %%% ~put references to the literature/web site here ~
 %}
-%\author{
-%%%  ~~who you are~~
-%}
+\author{
+  Pierre Jacob <pierre.jacob@ensae.fr>
+}
 %\note{
 %%%  ~~further notes~~
 %}
