@@ -22,10 +22,9 @@ ConvertResults <- function(results){
     nbiterations <- dim(allchains)[1]
     nbchains <- dim(allchains)[2]
     targetdim <- dim(allchains)[3]
-    library(doMC)
-    registerDoMC()
+    library(foreach)
     print("converting chains before plotting...")
-    df <- foreach (indexchain = 1:(nbchains), .combine = rbind) %dopar%{
+    df <- foreach (indexchain = 1:(nbchains), .combine = rbind) %do% {
         subchains <- as.data.frame(allchains[,indexchain,])
         names(subchains) <- paste("X", 1:targetdim, sep = "")
         subchains$indexchain <- indexchain

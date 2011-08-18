@@ -1,17 +1,20 @@
 ###############
 ## Metropolis-Hastings transition kernel targeting the biased distribution
-MHkernelPawl <- function(currentChains, currentsigma, currentLogTarget, 
+MHkernelPawl <- function(currentChains, currentLogTarget, 
                          currentLocations, currentReaction, logTheta, 
-                         AP, binning, target, proposalcovmatrix){
-    proposals <- currentChains + currentsigma * fastrmvnorm(AP@nchains, 
-                                                            mu = rep(0, target@dimension),
-                                                            sigma = proposalcovmatrix)
+                         nchains, binning, target, rproposal, dproposal, proposalparam){
+    proposals <- rproposal(currentChains, proposalparam)
+    #proposals <- currentChains + currentsigma * fastrmvnorm(nchains, 
+    #                                                        mu = rep(0, target@dimension),
+    #                                                        sigma = proposalcovmatrix)
     proposalLogTarget <- target@logdensity(proposals, target@parameters)
     proposalReaction <- binning@position(proposals, proposalLogTarget)
     proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
-    loguniforms <- log(runif(AP@nchains))
-    accepts <- (loguniforms < ((proposalLogTarget - logTheta[proposalLocations]) 
-                               - (currentLogTarget  - logTheta[currentLocations ])))
+    loguniforms <- log(runif(nchains))
+    accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
+                                - logTheta[proposalLocations]) 
+                               - (currentLogTarget + dproposal(currentChains, proposals, proposalparam)
+                                  - logTheta[currentLocations ])))
     currentChains[accepts,] <- proposals[accepts,]
     currentLogTarget[accepts] <- proposalLogTarget[accepts]
     currentLocations[accepts] <- proposalLocations[accepts]
@@ -78,6 +81,29 @@ pawl <- function(target, binning, AP, verbose = TRUE){
     proposalcovmatrix <- 1 / target@dimension * diag((target@dimension))
     sigma <- rep(0, AP@niterations + 1)
     sigma[1] <- AP@sigma_init
+    # Setting the proposal distribution for the MH kernel
+    proposalNotSpecified <- (is.null(target@rproposal(chains, target@proposalparam)))
+    if (proposalNotSpecified){
+        if (target@type == "continuous"){ 
+            proposalparam <- list(sigma = sigma[1])
+            rproposal <- function(currentstates, proposalparam){
+                currentstates + proposalparam$sigma * fastrmvnorm(AP@nchains, 
+                                       mu = rep(0, target@dimension), sigma = proposalcovmatrix)
+            }
+            dproposal <- function(currentstates, proposedstates, proposalparam) 0
+        }
+        else {
+            stop("missing proposal for the MH kernel in the discrete case\n")
+        }
+    } else {
+        dproposal <- target@dproposal
+        rproposal <- target@rproposal
+        proposalparam <- target@proposalparam
+    }
+    if (target@type == "discrete" & AP@adaptiveproposal){
+        AP@adaptiveproposal <- FALSE
+        cat("switching off adaptive proposal, because the target is discrete\n")
+    }
     # We keep track of the log densities computed along the iterations ...
     alllogtarget <- matrix(NA, nrow = (AP@niterations + 1), ncol = AP@nchains)
     currentlogtarget <- target@logdensity(chains, target@parameters)
@@ -96,11 +122,12 @@ pawl <- function(target, binning, AP, verbose = TRUE){
             cat("Iteration", iteration, "\n")
         }
         ## Sample new values from the MH kernel targeting the biased distribution ...
-        #print("beforemh")
-        mhresults <- MHkernelPawl(chains, sigma[iteration], currentlogtarget, 
-                                  currentlocations, currentreaction, logtheta[[iteration]], 
-                                  AP, binning, target, proposalcovmatrix)
-        #print("aftermh")
+        mhresults <- MHkernelPawl(chains, currentlogtarget, currentlocations, currentreaction,
+                                  logtheta[[iteration]], AP@nchains, binning, target, 
+                                  rproposal, dproposal, proposalparam)
+        #mhresults <- MHkernelPawl(chains, sigma[iteration], currentlogtarget, 
+        #                          currentlocations, currentreaction, logtheta[[iteration]], 
+        #                          AP, binning, target, proposalcovmatrix)
         chains <- mhresults$newchains
         allchains[iteration + 1,,] <- chains
         acceptrates <- c(acceptrates, mean(mhresults$accepts))
@@ -136,6 +163,7 @@ pawl <- function(target, binning, AP, verbose = TRUE){
         } else {
             sigma[iteration + 1] <- sigma[iteration]
         }
+        proposalparam$sigma <- sigma[iteration + 1]
         ## update the inner distribution of the chains in each bin
         ## (proportions in the left hand side of each bin)
         if (binning@autobinning){

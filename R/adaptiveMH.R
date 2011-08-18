@@ -15,34 +15,17 @@ fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
     return(retval)
 }
 
-# Metropolis-Hastings transition kernel, with random walk
-MHkernel <- function(currentChains, currentLogTarget, AP, target, currentsigma, proposalcovmatrix){
-    #print("mhkernel start")
-    proposals <- currentChains + currentsigma * fastrmvnorm(AP@nchains, 
-                            mu = rep(0, target@dimension), sigma = proposalcovmatrix)
-    #print("beforelogdens")
-#    print("proposals:")
-#    print(proposals)
-#    print("weirdproposals:")
-#    print(sum(is.infinite(proposals)))
-#    print(sum(is.na(proposals)))
+# Metropolis-Hastings transition kernel
+MHkernel <- function(currentChains, currentLogTarget, nchains, target, 
+                     rproposal, dproposal, proposalparam){
+    proposals <- rproposal(currentChains, proposalparam) 
     proposalLogTarget <- target@logdensity(proposals, target@parameters)
-#    print(proposalLogTarget)
-#    print("afterlogdens")
-#    print("a")
-    loguniforms <- log(runif(AP@nchains))
-#    print(loguniforms)
-    accepts <- (loguniforms < (proposalLogTarget - currentLogTarget))
-#    print(accepts)
-#    print("aaa")
+    loguniforms <- log(runif(nchains))
+    accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
+                               - currentLogTarget) - dproposal(currentChains, proposals, proposalparam))
     currentChains[accepts,] <- proposals[accepts,]
     currentLogTarget[accepts] <- proposalLogTarget[accepts]
-#    print("aaaaa")
-#    print(currentChains)
-    res <- list(newchains = currentChains, newlogtarget = currentLogTarget, accepts = accepts)
-#    print("aaaaaaaa")
-    #print(res)
-    return(res)
+    return(list(newchains = currentChains, newlogtarget = currentLogTarget, accepts = accepts))
 }
 
 ## Adaptive Metropolis-Hastings 
@@ -61,6 +44,29 @@ adaptiveMH <- function(target, AP){
     sigma <- rep(0,AP@niterations + 1)
     sigma[1] <- AP@sigma_init
     proposalcovmatrix <- 1 / target@dimension * diag((target@dimension))
+    # Setting the proposal distribution for the MH kernel
+    proposalNotSpecified <- (is.null(target@rproposal(chains, target@proposalparam)))
+    if (proposalNotSpecified){
+        if (target@type == "continuous"){ 
+            proposalparam <- list(sigma = sigma[1])
+            rproposal <- function(currentstates, proposalparam){
+                currentstates + proposalparam$sigma * fastrmvnorm(AP@nchains, 
+                                       mu = rep(0, target@dimension), sigma = proposalcovmatrix)
+            }
+            dproposal <- function(currentstates, proposedstates, proposalparam) 0
+        }
+        else {
+            stop("missing proposal for the MH kernel in the discrete case\n")
+        }
+    } else {
+        dproposal <- target@dproposal
+        rproposal <- target@rproposal
+        proposalparam <- target@proposalparam
+    }
+    if (target@type == "discrete" & AP@adaptiveproposal){
+        AP@adaptiveproposal <- FALSE
+        cat("switching off adaptive proposal, because the target is discrete\n")
+    }
     for (iteration in 1:AP@niterations){
         ## at each time...
         #cat("iteration:", iteration, "\n")
@@ -68,10 +74,8 @@ adaptiveMH <- function(target, AP){
             cat("Iteration", iteration, "\n")
         }
         ## sample new chains from the MH kernel ...
-        #print("beforemh")
-        mhresults <- MHkernel(chains, currentlogtarget, AP, target, 
-                              sigma[iteration], proposalcovmatrix)
-        #print("aftermh")
+        mhresults <- MHkernel(chains, currentlogtarget, AP@nchains, target, 
+                              rproposal, dproposal, proposalparam)
         chains <- mhresults$newchains
         currentlogtarget <- mhresults$newlogtarget
         acceptrates <- c(acceptrates, mean(mhresults$accepts))
@@ -81,6 +85,7 @@ adaptiveMH <- function(target, AP){
         } else {
             sigma[iteration + 1] <- sigma[iteration]
         }
+        proposalparam$sigma <- sigma[iteration + 1]
         allchains[iteration + 1,,] <- chains
         alllogtarget[iteration + 1,] <- currentlogtarget
     }
