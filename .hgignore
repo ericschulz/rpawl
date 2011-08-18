@@ -3,6 +3,7 @@ syntax: glob
 ^*.csv
 ^*.txt
 *.swp
+*.swo
 *.RData
 *.pdf
 *.png
