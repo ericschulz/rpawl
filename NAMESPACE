@@ -1,4 +1,4 @@
-useDynLib(PAWL, mixtureloglikelihood, mixturelogpriordensity)
+useDynLib(PAWL, mixtureloglikelihood, mixturelogpriordensity, compareToData, countSimilarities)
 export(createMixtureTarget, createTrimodalTarget, adaptiveMH, preexplorationAMH, pawl,
 ConvertResults,
 PlotComp1vsComp2, PlotLogTheta, PlotFH, PlotAllVar, PlotDensComp1vsComp2, PlotHist,

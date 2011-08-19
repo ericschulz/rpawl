@@ -36,8 +36,12 @@ adaptiveMH <- function(target, AP){
     acceptrates <- c()
     chains <- as.matrix(target@rinit(AP@nchains), ncol = target@dimension)
     alllogtarget <- matrix(NA, nrow = (AP@niterations + 1), ncol = AP@nchains)
-    allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
-    allchains[1,,] <- chains
+    if (AP@storeall){
+      allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
+      allchains[1,,] <- chains
+    } else {
+      allchains <- NULL
+    }
     chainsize <- AP@nchains
     currentlogtarget <- target@logdensity(chains, target@parameters)
     alllogtarget[1,] <- currentlogtarget
@@ -86,7 +90,9 @@ adaptiveMH <- function(target, AP){
             sigma[iteration + 1] <- sigma[iteration]
         }
         proposalparam$sigma <- sigma[iteration + 1]
-        allchains[iteration + 1,,] <- chains
+        if (AP@storeall){
+          allchains[iteration + 1,,] <- chains
+        }
         alllogtarget[iteration + 1,] <- currentlogtarget
     }
     return(list(acceptrates = acceptrates, allchains = allchains, alllogtarget = alllogtarget, 

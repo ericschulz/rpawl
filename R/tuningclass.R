@@ -1,12 +1,12 @@
 setClass("tuningparameters",
          representation(nchains = "numeric", niterations = "numeric", 
                         adaptiveproposal = "logical", adaptationrate = "function", 
-                        sigma_init = "numeric"))
+                        sigma_init = "numeric", storeall = "logical"))
 
 setGeneric("tuningparameters", function(...)standardGeneric("tuningparameters"))
 tuningparameters.constructor <- function(..., nchains, niterations, 
                                          adaptiveproposal, adaptationrate,
-                                         sigma_init){
+                                         sigma_init, storeall){
     if (missing(nchains))
         nchains <- 1
     if (missing(niterations))
@@ -23,20 +23,25 @@ tuningparameters.constructor <- function(..., nchains, niterations,
         sigma_init <- 1
         cat("sigma_init unspecified: set 1\n")
     }
+    if (missing(storeall)){
+      storeall <- TRUE
+      cat("storeall unspecified: set to TRUE\n")
+      cat("warning: if the target dimension is large, it will require a lot of memory\n")
+    }
     new("tuningparameters", 
         nchains = nchains, niterations = niterations, 
         adaptiveproposal = adaptiveproposal,
         adaptationrate = adaptationrate, 
-        sigma_init = sigma_init)
+        sigma_init = sigma_init, storeall = storeall)
 }
 setMethod("tuningparameters",
           definition = function(..., nchains, niterations, adaptiveproposal, adaptationrate, 
-                                sigma_init){
+                                sigma_init, storeall){
               tuningparameters.constructor(
                                nchains = nchains, niterations = niterations, 
                                adaptiveproposal = adaptiveproposal,
                                adaptationrate = adaptationrate, 
-                               sigma_init = sigma_init)
+                               sigma_init = sigma_init, storeall = storeall)
           })
 
 setMethod(f = "show", signature = "tuningparameters", 
@@ -45,6 +50,7 @@ setMethod(f = "show", signature = "tuningparameters",
               cat("*number of parallel chains:", object@nchains, "\n")
               cat("*number of iterations:", object@niterations, "\n")
               cat("*adaptive proposal:", object@adaptiveproposal, "\n")
+              cat("*store all:", object@adaptiveproposal, "\n")
           })
 
 
