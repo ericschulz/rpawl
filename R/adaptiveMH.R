@@ -16,30 +16,30 @@ fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
 }
 
 # Metropolis-Hastings transition kernel
-MHkernel <- function(currentChains, currentLogTarget, nchains, target, 
-                     rproposal, dproposal, proposalparam){
-    rproposalresults <- rproposal(currentChains, proposalparam)
-    proposals <- rproposalresults$states
-    if (target@updateavailable){
-        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
-                                 target@parameters, rproposalresults$others)
-    } else {
-        proposalLogTarget <- target@logdensity(proposals, target@parameters)
-    }
-    loguniforms <- log(runif(nchains))
-    accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
-                               - currentLogTarget) - dproposal(currentChains, proposals, proposalparam))
-    currentChains[accepts,] <- proposals[accepts,]
-    currentLogTarget[accepts] <- proposalLogTarget[accepts]
-    return(list(newchains = currentChains, newlogtarget = currentLogTarget, accepts = accepts))
-}
-
+#MHkernel <- function(currentChains, currentLogTarget, nchains, target, 
+#                     rproposal, dproposal, proposalparam){
+#    rproposalresults <- rproposal(currentChains, proposalparam)
+#    proposals <- rproposalresults$states
+#    if (target@updateavailable){
+#        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
+#                                 target@parameters, rproposalresults$others)
+#    } else {
+#        proposalLogTarget <- target@logdensity(proposals, target@parameters)
+#    }
+#    loguniforms <- log(runif(nchains))
+#    accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
+#                               - currentLogTarget) - dproposal(currentChains, proposals, proposalparam))
+#    currentChains[accepts,] <- proposals[accepts,]
+#    currentLogTarget[accepts] <- proposalLogTarget[accepts]
+#    return(list(newchains = currentChains, newlogtarget = currentLogTarget, accepts = accepts))
+#}
+#
 ## Adaptive Metropolis-Hastings 
 ## AP stands for Algorithmic Parameters
 adaptiveMH <- function(target, AP, proposal){
     print("Launching Adaptive Metropolis-Hastings algorithm with parameters:")
     print(AP)
-    acceptrates <- c()
+    acceptrates <- rep(0, AP@niterations)
     chains <- as.matrix(target@rinit(AP@nchains), ncol = target@dimension)
     currentlogtarget <- target@logdensity(chains, target@parameters)
     if (AP@saveeverynth > 0){
@@ -77,14 +77,23 @@ adaptiveMH <- function(target, AP, proposal){
             cat("Iteration", iteration, "\n")
         }
         ## sample new chains from the MH kernel ...
-        mhresults <- MHkernel(chains, currentlogtarget, AP@nchains, target, 
-                              rproposal, dproposal, proposalparam)
-        chains <- mhresults$newchains
-        currentlogtarget <- mhresults$newlogtarget
-        acceptrates <- c(acceptrates, mean(mhresults$accepts))
+        rproposalresults <- rproposal(chains, proposalparam)
+        proposals <- rproposalresults$states
+        if (target@updateavailable){
+            proposalLogTarget <- currentlogtarget + target@logdensityupdate(chains, 
+                                                                            target@parameters, rproposalresults$others)
+        } else {
+            proposalLogTarget <- target@logdensity(proposals, target@parameters)
+        }
+        loguniforms <- log(runif(AP@nchains))
+        accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, chains, proposalparam)
+                                   - currentlogtarget) - dproposal(chains, proposals, proposalparam))
+        chains[accepts,] <- proposals[accepts,]
+        currentlogtarget[accepts] <- proposalLogTarget[accepts]
+        acceptrates[iteration] <- mean(accepts)
         if (proposal@adaptiveproposal){
             sigma[iteration + 1] <- max(10^(-10 - target@dimension), sigma[iteration] + 
-                proposal@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
+                proposal@adaptationrate(iteration) * (2 * (mean(accepts) > 0.234) - 1))
             proposalparam$sigma <- sigma[iteration + 1]
         } 
         if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){

@@ -221,21 +221,23 @@ proposalinstance <- proposal(rproposal = rproposal,
 ######
 # Adaptive Metropolis-Hastings
 ######
-mhparameters <- tuningparameters(nchains = 10, niterations = 100000, 
-                                 saveeverynth = 100, computemean = TRUE) 
+mhparameters <- tuningparameters(nchains = 10, niterations = 250000, 
+                                 storeall = FALSE)
+#mhparameters <- tuningparameters(nchains = 10, niterations = 50000, 
+#                                 saveeverynth = 5000, computemean = FALSE) 
 print(mhparameters)
 
-Rprof(tmp <- tempfile())
-amhresults <- adaptiveMH(isingtarget, mhparameters, proposalinstance)
-Rprof()
-# display profiling results
-print(summaryRprof(tmp))
-unlink(tmp)
-
-meanchains <- matrix(apply(amhresults$finalchains, 2, mean), ncol = imgsize)
-library(fields)
-image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
-           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+#Rprof(tmp <- tempfile())
+#amhresults <- adaptiveMH(isingtarget, mhparameters, proposalinstance)
+#Rprof()
+## display profiling results
+#print(summaryRprof(tmp))
+#unlink(tmp)
+#
+#meanchains <- matrix(apply(amhresults$finalchains, 2, mean), ncol = imgsize)
+#library(fields)
+#image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
+#           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
 
 #meanchains <- matrix(apply(amhresults$meanchains, 2, mean), ncol = imgsize)
 #X11()
@@ -251,22 +253,29 @@ image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1),
 getLogEnergy <- function(points, logdensity) -logdensity
 densitybinning <- binning(position = getLogEnergy,
                             name = "minus log target density",
-                            binrange = c(-5990, -5600),
+                            binrange = c(-5900, -5500),
                             autobinning = FALSE)
 
-chains <- ConvertResults(amhresults)
 
-
-range(chains$iterations)
-hist(subset(chains, iterations > 50)$logdens)
-
+Rprof(tmp <- tempfile())
 pawlresults <- pawl(isingtarget, densitybinning, mhparameters, proposalinstance)
-chains <- ConvertResults(pawlresults)
-hist(subset(chains, iterations > 50)$logdens)
-PlotHistBin(pawlresults, densitybinning)
-
-
-
-
-
-
+Rprof()
+# display profiling results
+print(summaryRprof(tmp))
+unlink(tmp)
+#chains <- ConvertResults(pawlresults)
+#hist(subset(chains, iterations > 50)$logdens)
+#PlotHistBin(pawlresults, densitybinning)
+getFrequencies(pawlresults, densitybinning)
+#PlotLogTheta(pawlresults)
+#
+#meanchains <- apply(pawlresults$allchains, c(2, 3), mean)
+#meanchains <- matrix(apply(meanchains, 2, mean), ncol = imgsize)
+#X11()
+#image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
+#           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+#
+#
+#
+#
+#

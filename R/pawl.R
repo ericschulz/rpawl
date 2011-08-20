@@ -31,17 +31,8 @@ MHkernelPawl <- function(currentChains, currentLogTarget,
 ## Here c is taken to be 1 / d.
 checkFlatHistogram <- function(bincount, binning){
     difference <- abs((bincount / sum(bincount)) - binning@desiredfreq)
-    #threshold <- binning@fhthreshold * (min(binning@desiredfreq))
     FHreached <- all(difference < binning@fhthreshold * binning@desiredfreq) &
                                                          all(bincount > 10)
-#    if (FHreached){
-#        print("/*inside FH")
-#        print(bincount / sum(bincount))
-#        print(binning@bins)
-#        print(binning@desiredfreq)
-#        print((binning@fhthreshold / length(binning@bins)))
-#        print("*/")
-#    }
     return(FHreached)
 }
 
@@ -91,7 +82,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     if (AP@computemean){
         sumchains <- chains
     }
-    acceptrates <- c()
+    acceptrates <- rep(0, AP@niterations)
     # Setting the proposal distribution for the MH kernel
     if (missing(proposal) & target@type == "continuous"){
         proposal <- createAdaptiveRandomWalkProposal(nchains = AP@nchains, 
@@ -122,19 +113,44 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     thisiterationcount <- tabulate(currentlocations, nbins = nbins)
     bincount <- bincount + thisiterationcount
     tempbincount <- tempbincount + thisiterationcount
+    lastFHtime <- 0
     for (iteration in 1:AP@niterations){
         #print(iteration)
         if (iteration %% 100 == 0){
             cat("Iteration", iteration, "\n")
         }
         ## Sample new values from the MH kernel targeting the biased distribution ...
-        mhresults <- MHkernelPawl(chains, currentlogtarget, currentlocations, currentreaction,
-                                  logtheta[[iteration]], AP@nchains, binning, target, 
-                                  rproposal, dproposal, proposalparam)
+#        mhresults <- MHkernelPawl(chains, currentlogtarget, currentlocations, currentreaction,
+#                                  logtheta[[iteration]], AP@nchains, binning, target, 
+#                                  rproposal, dproposal, proposalparam)
+#MHkernelPawl <- function(currentChains, currentLogTarget, 
+#                         currentLocations, currentReaction, logTheta, 
+#                         nchains, binning, target, rproposal, dproposal, proposalparam){
+
+
+        rproposalresults <- rproposal(chains, proposalparam)
+        proposals <- rproposalresults$states
+        if (target@updateavailable){
+            proposalLogTarget <- currentlogtarget + target@logdensityupdate(chains, 
+                                                                            target@parameters, rproposalresults$others)
+        } else {
+            proposalLogTarget <- target@logdensity(proposals, target@parameters)
+        }
+        #proposalLogTarget <- target@logdensity(proposals, target@parameters)
+        proposalReaction <- binning@position(proposals, proposalLogTarget)
+        proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
+        loguniforms <- log(runif(AP@nchains))
+        accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, chains, proposalparam)
+                                    - logtheta[[iteration]][proposalLocations]) 
+        - (currentlogtarget + dproposal(chains, proposals, proposalparam)
+           - logtheta[[iteration]][currentlocations ])))
+        chains[accepts,] <- proposals[accepts,]
+        currentlogtarget[accepts] <- proposalLogTarget[accepts]
+        currentlocations[accepts] <- proposalLocations[accepts]
+        currentreaction[accepts] <- proposalReaction[accepts]
         #mhresults <- MHkernelPawl(chains, sigma[iteration], currentlogtarget, 
         #                          currentlocations, currentreaction, logtheta[[iteration]], 
         #                          AP, binning, target, proposalcovmatrix)
-        chains <- mhresults$newchains
         if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){
             nstoredchains <- nstoredchains + 1
             allchains[nstoredchains,,] <- chains
@@ -143,12 +159,9 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         if (AP@computemean){
             sumchains <- sumchains + chains
         }
-        acceptrates <- c(acceptrates, mean(mhresults$accepts))
-        currentlogtarget <- mhresults$newlogtarget
-        currentreaction <- mhresults$newreaction
+        acceptrates[iteration] <- mean(accepts)
         #print("currentlocations:")
         #print(currentlocations)
-        currentlocations <- mhresults$newlocations
         ## update the proportions of visit in each bin
         thisiterationcount <- tabulate(currentlocations, nbins = nbins)
         bincount <- bincount + thisiterationcount 
@@ -171,7 +184,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         ## update the adaptive proposal standard deviation ...
         if (proposal@adaptiveproposal){
             sigma[iteration + 1] <- max(10^(-10 - target@dimension), sigma[iteration] + 
-                proposal@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
+                proposal@adaptationrate(iteration) * (2 * (mean(accepts) > 0.234) - 1))
             proposalparam$sigma <- sigma[iteration + 1]
         } 
         ## update the inner distribution of the chains in each bin
@@ -183,9 +196,6 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         ## check if flat histogram is reached ...
         if (binning@useFH){
             FHreached <- checkFlatHistogram(tempbincount, binning)
-            lastFHtime <- ifelse(!is.null(FHtimes),
-                                 FHtimes[length(FHtimes)],
-                                 0)
             enoughElapsedTime <- (iteration >= lastFHtime + binning@minSimEffort)
             if (FHreached && enoughElapsedTime){
                 if (verbose) print("Flat histogram criterion met!")
@@ -193,6 +203,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                 k <- k + 1
                 khistory <- c(khistory, k)
                 FHtimes <- c(FHtimes, iteration)
+                lastFHtime <- iteration
                 # If the automatic bin split mechanism is enabled ...
                 if (binning@autobinning & iteration < AP@niterations){
                     # Find which bins would benefit from a split
