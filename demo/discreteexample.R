@@ -25,7 +25,7 @@ rproposal <- function(states, proposalparam){
         states[index] <- sample(x = 1:proposalparam$card, 
                                 size = 1, prob = proposalparam$transitionmatrix[states[index],])
     }
-  return(states)
+  return(list(states = states))
 }
 # function to compute the density of the proposal kernel
 # (necessary to compute the acceptance rate)
@@ -46,7 +46,7 @@ rinit <- function(size) return(rep(1, size))
 discretetarget <- target(name = "discrete toy example", dimension = 1, type = "discrete",
                          rinit = rinit, logdensity = logdensity, parameters = parameters)
 # specify Metropolis-Hastings tuning parameters:
-mhparameters <- tuningparameters(nchains = 1, niterations = 1000)
+mhparameters <- tuningparameters(nchains = 10, niterations = 1000)
 Rprof(tmp <- tempfile())
 amhresults <- adaptiveMH(discretetarget, mhparameters, proposalinstance)
 Rprof()

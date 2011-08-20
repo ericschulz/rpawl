@@ -79,8 +79,8 @@ createAdaptiveRandomWalkProposal <- function(nchains, targetdimension, adaptivep
     proposalparam <- list(sigma = sigma_init, nchains = nchains, targetdimension = targetdimension,
                           proposalcovmatrix = proposalcovmatrix)
     rproposal <- function(currentstates, proposalparam){
-        currentstates + proposalparam$sigma * fastrmvnorm(proposalparam$nchains, 
-              mu = rep(0, proposalparam$targetdimension), sigma = proposalparam$proposalcovmatrix)
+        list(states = currentstates + proposalparam$sigma * fastrmvnorm(proposalparam$nchains, 
+              mu = rep(0, proposalparam$targetdimension), sigma = proposalparam$proposalcovmatrix))
     }
     dproposal <- function(currentstates, proposedstates, proposalparam) 0
     proposalinstance <- proposal(rproposal = rproposal, 

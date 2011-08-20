@@ -1,5 +1,5 @@
 useDynLib(PAWL, mixtureloglikelihood, mixturelogpriordensity,
-IsingCompareToData, IsingUpdate, IsingCountSimilarities)
+IsingCounter, IsingUpdate) 
 export(createAdaptiveRandomWalkProposal, createMixtureTarget, createTrimodalTarget, adaptiveMH, preexplorationAMH, pawl,
 ConvertResults,
 PlotComp1vsComp2, PlotLogTheta, PlotFH, PlotAllVar, PlotDensComp1vsComp2, PlotHist,

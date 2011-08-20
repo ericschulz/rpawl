@@ -18,8 +18,14 @@ fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
 # Metropolis-Hastings transition kernel
 MHkernel <- function(currentChains, currentLogTarget, nchains, target, 
                      rproposal, dproposal, proposalparam){
-    proposals <- rproposal(currentChains, proposalparam) 
-    proposalLogTarget <- target@logdensity(proposals, target@parameters)
+    rproposalresults <- rproposal(currentChains, proposalparam)
+    proposals <- rproposalresults$states
+    if (target@updateavailable){
+        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
+                                 target@parameters, rproposalresults$others)
+    } else {
+        proposalLogTarget <- target@logdensity(proposals, target@parameters)
+    }
     loguniforms <- log(runif(nchains))
     accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
                                - currentLogTarget) - dproposal(currentChains, proposals, proposalparam))

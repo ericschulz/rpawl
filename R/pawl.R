@@ -3,11 +3,15 @@
 MHkernelPawl <- function(currentChains, currentLogTarget, 
                          currentLocations, currentReaction, logTheta, 
                          nchains, binning, target, rproposal, dproposal, proposalparam){
-    proposals <- rproposal(currentChains, proposalparam)
-    #proposals <- currentChains + currentsigma * fastrmvnorm(nchains, 
-    #                                                        mu = rep(0, target@dimension),
-    #                                                        sigma = proposalcovmatrix)
-    proposalLogTarget <- target@logdensity(proposals, target@parameters)
+    rproposalresults <- rproposal(currentChains, proposalparam)
+    proposals <- rproposalresults$states
+    if (target@updateavailable){
+        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
+                                 target@parameters, rproposalresults$others)
+    } else {
+        proposalLogTarget <- target@logdensity(proposals, target@parameters)
+    }
+    #proposalLogTarget <- target@logdensity(proposals, target@parameters)
     proposalReaction <- binning@position(proposals, proposalLogTarget)
     proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
     loguniforms <- log(runif(nchains))
