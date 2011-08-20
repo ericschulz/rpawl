@@ -35,17 +35,20 @@ dproposal <- function(states, ys, proposalparam){
     }
   return(states)
 }
+
+proposalinstance <- proposal(rproposal = rproposal, 
+                             dproposal = dproposal, 
+                             proposalparam = proposalparam)
+
 # function to draw starting points for the MCMC algorithms:
 rinit <- function(size) return(rep(1, size))
 # define the target
 discretetarget <- target(name = "discrete toy example", dimension = 1, type = "discrete",
-                         rinit = rinit, logdensity = logdensity, parameters = parameters,
-                         rproposal = rproposal, dproposal = dproposal, proposalparam = proposalparam)
-
+                         rinit = rinit, logdensity = logdensity, parameters = parameters)
 # specify Metropolis-Hastings tuning parameters:
-mhparameters <- tuningparameters(nchains = 10, niterations = 100)
+mhparameters <- tuningparameters(nchains = 1, niterations = 1000)
 Rprof(tmp <- tempfile())
-amhresults <- adaptiveMH(discretetarget, mhparameters)
+amhresults <- adaptiveMH(discretetarget, mhparameters, proposalinstance)
 Rprof()
 print(summaryRprof(tmp))
 unlink(tmp)
@@ -64,7 +67,7 @@ positionbinning <- binning(position = getPos,
                             bins = c(1, 2),
                             desiredfreq = c(0.8, 0.2),
                             useLearningRate = FALSE)
-pawlresults <- pawl(discretetarget, binning = positionbinning, AP = mhparameters)
+pawlresults <- pawl(discretetarget, binning = positionbinning, AP = mhparameters, proposalinstance)
 pawlchains <- ConvertResults(pawlresults)
 cat("desired frequencies:", positionbinning@desiredfreq, "\n")
 pawlcount <- tabulate(getPos(pawlchains$X1, pawlchains$logdens), nbins = 2)

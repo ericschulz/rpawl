@@ -1,5 +1,7 @@
 # remove all objects
 rm(list = ls())
+# setting a seed for the RNG
+set.seed(17)
 Ymatrix <-
 structure(c(FALSE, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE, 
 FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, 
@@ -178,23 +180,28 @@ rInitDistribution <- function(size)
   matrix(sample(0:1,  targetdimension * size, replace = TRUE), nrow = size)
 
 logdensity <- function(X, parameters){
-    countSimilar <- .Call("countSimilarities", chains = X, imagesize = parameters$imagesize)
-    countData <- .Call("compareToData", chains = X, dataimg = parameters$Ymatrix,
+    countSimilar <- .Call("IsingCountSimilarities", chains = X, imagesize = parameters$imagesize)
+    countData <- .Call("IsingCompareToData", chains = X, dataimg = parameters$Ymatrix,
                  imagesize = parameters$imagesize)
     return(parameters$a * countData + parameters$b * (countSimilar / 2))
 }
+isingtarget <- target(name = "ising", type = "discrete", dimension = targetdimension,
+                         rinit = rInitDistribution, logdensity = logdensity,
+                         parameters = targetparameters)
 
-x <- rInitDistribution(10)
-print(logdensity(x, targetparameters))
+
 
 proposalparam <- list(imagesize = imgsize, targetdimension = targetdimension)
 rproposal <- function(states, proposalparam){
     nchains <- dim(states)[1]
-    for (index in 1:nchains){
-      i <- sample(1:proposalparam$targetdimension, 1)
-      states[index, i] <- abs(1 - states[index, i])
-    }
-  return(states)
+    index_to_flip <- sample.int(n = proposalparam$targetdimension, 
+                                size = nchains, replace = TRUE)
+    states[nchains * (index_to_flip - 1) + 1:nchains] <- !(states[nchains *
+                                                           (index_to_flip - 1) + 1:nchains])
+    #for (index in 1:nchains){
+      #states[index, index_to_flip[index]] <- !states[index, index_to_flip[index]]
+    #}
+  return(list(states = states, others = index_to_flip))
 }
 # function to compute the density of the proposal kernel
 # (necessary to compute the acceptance rate)
@@ -202,34 +209,67 @@ dproposal <- function(states, ys, proposalparam){
   return(rep(0, dim(states)[1]))
 }
 
+proposalinstance <- proposal(rproposal = rproposal, 
+                             dproposal = dproposal,
+                             proposalparam = proposalparam)
 
+somestates <- rInitDistribution(4)
+statesdens <- logdensity(somestates, targetparameters)
+proposedstates <- rproposal(somestates, proposalparam)
+flippedindex <- proposedstates$others
+proposedstates <- proposedstates$states
+proposdens <- logdensity(proposedstates, targetparameters)
+print(statesdens)
+print(proposdens)
 
-isingtarget <- target(name = "ising", dimension = targetdimension,
-                         rinit = rInitDistribution, logdensity = logdensity,
-                         parameters = targetparameters, type = "discrete",
-                         rproposal = rproposal, dproposal = dproposal,
-                         proposalparam = proposalparam)
-print(isingtarget)
-
-# setting a seed for the RNG
-set.seed(17)
-
-######
-# Adaptive Metropolis-Hastings
-######
-mhparameters <- tuningparameters(nchains = 10, niterations = 100000, adaptiveproposal = FALSE,
-                                 storeall = FALSE) 
-print(mhparameters)
-
-Rprof(tmp <- tempfile())
-amhresults <- adaptiveMH(isingtarget, mhparameters)
-Rprof()
-# display profiling results
-print(summaryRprof(tmp))
-unlink(tmp)
+computeUpdatedLogdensity <- function(chains, parameters, flippedindex){
+    res <- .Call("IsingUpdate", chains = chains, dataimg = parameters$Ymatrix,
+                imagesize = parameters$imagesize, flippedindex = flippedindex)
+    equalToData <- res$equalToData
+    print(parameters$a * countData + parameters$b * (countSimilar / 2))
+}
+print(flippedindex)
+computeUpdatedLogdensity(somestates, targetparameters, flippedindex)
 
 
 
-
-
-
+#
+#
+#
+#
+#
+#######
+## Adaptive Metropolis-Hastings
+#######
+#mhparameters <- tuningparameters(nchains = 100, niterations = 1000, 
+#                                 storeall = FALSE) 
+#print(mhparameters)
+#
+#Rprof(tmp <- tempfile())
+#amhresults <- adaptiveMH(isingtarget, mhparameters, proposalinstance)
+#Rprof()
+## display profiling results
+#print(summaryRprof(tmp))
+#unlink(tmp)
+#
+#chains <- amhresults$finalchains
+#meanchains <- matrix(apply(amhresults$finalchains, 2, mean), ncol = imgsize)
+#library(fields)
+#image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
+#           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+#
+#
+##
+##a = matrix(sample(0:1, 40, replace = TRUE), nrow = 4)
+##a = matrix(1:40, nrow = 4)
+##
+##index = sample.int(10, 4, replace = TRUE)
+##print(index)
+##a[4*(index-1) + 1:4] <- a[4*(index-1) + 1:4] + 1000
+##print(a)
+##
+##a[index]
+##
+#
+#
+#

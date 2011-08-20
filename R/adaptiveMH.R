@@ -30,7 +30,7 @@ MHkernel <- function(currentChains, currentLogTarget, nchains, target,
 
 ## Adaptive Metropolis-Hastings 
 ## AP stands for Algorithmic Parameters
-adaptiveMH <- function(target, AP){
+adaptiveMH <- function(target, AP, proposal){
     print("Launching Adaptive Metropolis-Hastings algorithm with parameters:")
     print(AP)
     acceptrates <- c()
@@ -39,36 +39,24 @@ adaptiveMH <- function(target, AP){
     if (AP@storeall){
       allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
       allchains[1,,] <- chains
-    } else {
-      allchains <- NULL
     }
-    chainsize <- AP@nchains
     currentlogtarget <- target@logdensity(chains, target@parameters)
     alllogtarget[1,] <- currentlogtarget
-    sigma <- rep(0,AP@niterations + 1)
-    sigma[1] <- AP@sigma_init
-    proposalcovmatrix <- 1 / target@dimension * diag((target@dimension))
     # Setting the proposal distribution for the MH kernel
-    proposalNotSpecified <- (is.null(target@rproposal(chains, target@proposalparam)))
-    if (proposalNotSpecified){
-        if (target@type == "continuous"){ 
-            proposalparam <- list(sigma = sigma[1])
-            rproposal <- function(currentstates, proposalparam){
-                currentstates + proposalparam$sigma * fastrmvnorm(AP@nchains, 
-                                       mu = rep(0, target@dimension), sigma = proposalcovmatrix)
-            }
-            dproposal <- function(currentstates, proposedstates, proposalparam) 0
-        }
-        else {
-            stop("missing proposal for the MH kernel in the discrete case\n")
-        }
-    } else {
-        dproposal <- target@dproposal
-        rproposal <- target@rproposal
-        proposalparam <- target@proposalparam
+    if (missing(proposal) & target@type == "continuous"){
+        proposal <- createAdaptiveRandomWalkProposal(nchains = AP@nchains, 
+                                               targetdimension = target@dimension,
+                                               adaptiveproposal = TRUE)
     }
-    if (target@type == "discrete" & AP@adaptiveproposal){
-        AP@adaptiveproposal <- FALSE
+    dproposal <- proposal@dproposal
+    rproposal <- proposal@rproposal
+    proposalparam <- proposal@proposalparam
+    if (proposal@adaptiveproposal){
+        sigma <- rep(0, AP@niterations + 1)
+        sigma[1] <- proposal@proposalparam$sigma
+    }
+    if (target@type == "discrete" & proposal@adaptiveproposal){
+        proposal@adaptiveproposal <- FALSE
         cat("switching off adaptive proposal, because the target is discrete\n")
     }
     for (iteration in 1:AP@niterations){
@@ -83,19 +71,25 @@ adaptiveMH <- function(target, AP){
         chains <- mhresults$newchains
         currentlogtarget <- mhresults$newlogtarget
         acceptrates <- c(acceptrates, mean(mhresults$accepts))
-        if (AP@adaptiveproposal){
+        if (proposal@adaptiveproposal){
             sigma[iteration + 1] <- max(10^(-10 - target@dimension), sigma[iteration] + 
-                AP@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
-        } else {
-            sigma[iteration + 1] <- sigma[iteration]
-        }
-        proposalparam$sigma <- sigma[iteration + 1]
+                proposal@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
+            proposalparam$sigma <- sigma[iteration + 1]
+        } 
         if (AP@storeall){
           allchains[iteration + 1,,] <- chains
         }
         alllogtarget[iteration + 1,] <- currentlogtarget
     }
-    return(list(acceptrates = acceptrates, allchains = allchains, alllogtarget = alllogtarget, 
-                sigma = sigma))
+    results <- list(acceptrates = acceptrates, alllogtarget = alllogtarget,
+                    finalchains = chains)
+    if (proposal@adaptiveproposal)
+        results$sigma <- sigma
+    if (AP@storeall)
+        results$allchains <- allchains
+    return(results)
 }
+
+
+
 

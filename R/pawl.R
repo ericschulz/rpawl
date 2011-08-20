@@ -44,7 +44,7 @@ checkFlatHistogram <- function(bincount, binning){
 
 ## Particle Wang-Landau function with flat histogram criterion
 ## AP stands for Algorithmic Parameters
-pawl <- function(target, binning, AP, verbose = TRUE){
+pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     print("Launching Particle Wang-Landau algorithm ...") 
     # Init some algorithmic parameters ...
     nbins <- length(binning@bins)
@@ -74,34 +74,31 @@ pawl <- function(target, binning, AP, verbose = TRUE){
     nbinsvector <- c(nbins)
     # We keep track of the chains, and of the history in "allchains"...
     chains <- as.matrix(target@rinit(AP@nchains))
-    allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
-    allchains[1,,] <- chains
-    acceptrates <- c()
-    # Cov matrix and standard dev of the adaptive proposal ...
-    proposalcovmatrix <- 1 / target@dimension * diag((target@dimension))
-    sigma <- rep(0, AP@niterations + 1)
-    sigma[1] <- AP@sigma_init
-    # Setting the proposal distribution for the MH kernel
-    proposalNotSpecified <- (is.null(target@rproposal(chains, target@proposalparam)))
-    if (proposalNotSpecified){
-        if (target@type == "continuous"){ 
-            proposalparam <- list(sigma = sigma[1])
-            rproposal <- function(currentstates, proposalparam){
-                currentstates + proposalparam$sigma * fastrmvnorm(AP@nchains, 
-                                       mu = rep(0, target@dimension), sigma = proposalcovmatrix)
-            }
-            dproposal <- function(currentstates, proposedstates, proposalparam) 0
-        }
-        else {
-            stop("missing proposal for the MH kernel in the discrete case\n")
-        }
-    } else {
-        dproposal <- target@dproposal
-        rproposal <- target@rproposal
-        proposalparam <- target@proposalparam
+    if (AP@storeall){
+        allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
+        allchains[1,,] <- chains
     }
-    if (target@type == "discrete" & AP@adaptiveproposal){
-        AP@adaptiveproposal <- FALSE
+    acceptrates <- c()
+    # Setting the proposal distribution for the MH kernel
+    if (missing(proposal) & target@type == "continuous"){
+        proposal <- createAdaptiveRandomWalkProposal(nchains = AP@nchains, 
+                                               targetdimension = target@dimension,
+                                               adaptiveproposal = TRUE)
+    }
+    if (proposal@adaptiveproposal){
+        sigma <- rep(0, AP@niterations + 1)
+        sigma[1] <- proposal@proposalparam$sigma
+    }
+    dproposal <- proposal@dproposal
+    rproposal <- proposal@rproposal
+    proposalparam <- proposal@proposalparam
+    # standard dev of the adaptive proposal ...
+    if (proposal@adaptiveproposal){
+        sigma <- rep(0, AP@niterations + 1)
+        sigma[1] <- proposal@proposalparam$sigma
+    }
+    if (target@type == "discrete" & proposal@adaptiveproposal){
+        proposal@adaptiveproposal <- FALSE
         cat("switching off adaptive proposal, because the target is discrete\n")
     }
     # We keep track of the log densities computed along the iterations ...
@@ -129,7 +126,8 @@ pawl <- function(target, binning, AP, verbose = TRUE){
         #                          currentlocations, currentreaction, logtheta[[iteration]], 
         #                          AP, binning, target, proposalcovmatrix)
         chains <- mhresults$newchains
-        allchains[iteration + 1,,] <- chains
+        if (AP@storeall)
+            allchains[iteration + 1,,] <- chains
         acceptrates <- c(acceptrates, mean(mhresults$accepts))
         currentlogtarget <- mhresults$newlogtarget
         alllogtarget[iteration + 1,] <- currentlogtarget
@@ -157,13 +155,11 @@ pawl <- function(target, binning, AP, verbose = TRUE){
                     (currentproportions - binning@desiredfreq)
         }
         ## update the adaptive proposal standard deviation ...
-        if (AP@adaptiveproposal){
+        if (proposal@adaptiveproposal){
             sigma[iteration + 1] <- max(10^(-10 - target@dimension), sigma[iteration] + 
-                            AP@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
-        } else {
-            sigma[iteration + 1] <- sigma[iteration]
-        }
-        proposalparam$sigma <- sigma[iteration + 1]
+                proposal@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
+            proposalparam$sigma <- sigma[iteration + 1]
+        } 
         ## update the inner distribution of the chains in each bin
         ## (proportions in the left hand side of each bin)
         if (binning@autobinning){
@@ -220,11 +216,16 @@ pawl <- function(target, binning, AP, verbose = TRUE){
             }
         }
     }
-    return(list(chains = chains, acceptrates = acceptrates, logtheta = logtheta,
+    results <- list(chains = chains, acceptrates = acceptrates, logtheta = logtheta,
                 finallocations = currentlocations, FHtimes = FHtimes, 
-                allchains = allchains, sigma = sigma, bins = binning@bins, 
+                bins = binning@bins, 
                 alllogtarget = alllogtarget, splitTimes = splitTimes, nbins = nbinsvector,
-                binshistory = binshistory, khistory = khistory, bincount = bincount))
+                binshistory = binshistory, khistory = khistory, bincount = bincount)
+    if (proposal@adaptiveproposal)
+        results$sigma <- sigma
+    if (AP@storeall)
+        results$allchains <- allchains
+    return(results)
 }
 
 getFrequencies <- function(results, binning){
