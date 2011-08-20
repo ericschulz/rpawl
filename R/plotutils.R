@@ -17,6 +17,9 @@
 
 ## convert results to a more proper format for plotting
 ConvertResults <- function(results){
+    if (!("allchains" %in% names(results))){
+        stop("error while converting results: allchains not available\n")
+    }
     allchains <- results$allchains
     alllogtarget <- results$alllogtarget
     nbiterations <- dim(allchains)[1]

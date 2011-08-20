@@ -41,13 +41,18 @@ adaptiveMH <- function(target, AP, proposal){
     print(AP)
     acceptrates <- c()
     chains <- as.matrix(target@rinit(AP@nchains), ncol = target@dimension)
-    alllogtarget <- matrix(NA, nrow = (AP@niterations + 1), ncol = AP@nchains)
-    if (AP@storeall){
-      allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
-      allchains[1,,] <- chains
-    }
     currentlogtarget <- target@logdensity(chains, target@parameters)
-    alllogtarget[1,] <- currentlogtarget
+    if (AP@saveeverynth > 0){
+      nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
+      allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
+      alllogtarget <- matrix(NA, nrow = nallchains, ncol = AP@nchains)
+      nstoredchains <- 1
+      allchains[nstoredchains,,] <- chains
+      alllogtarget[nstoredchains,] <- currentlogtarget
+    }
+    if (AP@computemean){
+        sumchains <- chains
+    }
     # Setting the proposal distribution for the MH kernel
     if (missing(proposal) & target@type == "continuous"){
         proposal <- createAdaptiveRandomWalkProposal(nchains = AP@nchains, 
@@ -82,17 +87,25 @@ adaptiveMH <- function(target, AP, proposal){
                 proposal@adaptationrate(iteration) * (2 * (mean(mhresults$accepts) > 0.234) - 1))
             proposalparam$sigma <- sigma[iteration + 1]
         } 
-        if (AP@storeall){
-          allchains[iteration + 1,,] <- chains
+        if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){
+            nstoredchains <- nstoredchains + 1
+            allchains[nstoredchains,,] <- chains
+            alllogtarget[nstoredchains,] <- currentlogtarget
         }
-        alllogtarget[iteration + 1,] <- currentlogtarget
+        if (AP@computemean){
+            sumchains <- sumchains + chains
+        }
     }
-    results <- list(acceptrates = acceptrates, alllogtarget = alllogtarget,
+    results <- list(acceptrates = acceptrates,
                     finalchains = chains)
     if (proposal@adaptiveproposal)
         results$sigma <- sigma
-    if (AP@storeall)
+    if (AP@saveeverynth > 0){
         results$allchains <- allchains
+        results$alllogtarget <- alllogtarget
+    }
+    if (AP@computemean)
+        results$meanchains <- sumchains / (AP@niterations + 1)
     return(results)
 }
 

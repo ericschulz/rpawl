@@ -19,7 +19,8 @@ set.seed(17)
 ######
 # Adaptive Metropolis-Hastings
 ######
-mhparameters <- tuningparameters(nchains = 100, niterations = 1000, adaptiveproposal = TRUE) 
+mhparameters <- tuningparameters(nchains = 100, niterations = 1000, adaptiveproposal = TRUE,
+                                 storeall = TRUE) 
 amhresults <- adaptiveMH(gaussiantarget, mhparameters)
 # check that it's working
 PlotHist(results = amhresults, component = 1)

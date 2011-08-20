@@ -46,7 +46,7 @@ rinit <- function(size) return(rep(1, size))
 discretetarget <- target(name = "discrete toy example", dimension = 1, type = "discrete",
                          rinit = rinit, logdensity = logdensity, parameters = parameters)
 # specify Metropolis-Hastings tuning parameters:
-mhparameters <- tuningparameters(nchains = 10, niterations = 1000)
+mhparameters <- tuningparameters(nchains = 10, niterations = 1000, storeall = TRUE)
 Rprof(tmp <- tempfile())
 amhresults <- adaptiveMH(discretetarget, mhparameters, proposalinstance)
 Rprof()

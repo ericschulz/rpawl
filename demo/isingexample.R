@@ -221,8 +221,8 @@ proposalinstance <- proposal(rproposal = rproposal,
 ######
 # Adaptive Metropolis-Hastings
 ######
-mhparameters <- tuningparameters(nchains = 10, niterations = 10000, 
-                                 storeall = FALSE) 
+mhparameters <- tuningparameters(nchains = 10, niterations = 100000, 
+                                 saveeverynth = 100, computemean = TRUE) 
 print(mhparameters)
 
 Rprof(tmp <- tempfile())
@@ -232,10 +232,41 @@ Rprof()
 print(summaryRprof(tmp))
 unlink(tmp)
 
-chains <- amhresults$finalchains
 meanchains <- matrix(apply(amhresults$finalchains, 2, mean), ncol = imgsize)
 library(fields)
 image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
            col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+
+#meanchains <- matrix(apply(amhresults$meanchains, 2, mean), ncol = imgsize)
+#X11()
+#image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
+#           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+#
+#meanchains <- apply(amhresults$allchains, c(2, 3), mean)
+#meanchains <- matrix(apply(meanchains, 2, mean), ncol = imgsize)
+#X11()
+#image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
+#           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
+
+getLogEnergy <- function(points, logdensity) -logdensity
+densitybinning <- binning(position = getLogEnergy,
+                            name = "minus log target density",
+                            binrange = c(-5990, -5600),
+                            autobinning = FALSE)
+
+chains <- ConvertResults(amhresults)
+
+
+range(chains$iterations)
+hist(subset(chains, iterations > 50)$logdens)
+
+pawlresults <- pawl(isingtarget, densitybinning, mhparameters, proposalinstance)
+chains <- ConvertResults(pawlresults)
+hist(subset(chains, iterations > 50)$logdens)
+PlotHistBin(pawlresults, densitybinning)
+
+
+
+
 
 

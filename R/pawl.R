@@ -78,9 +78,18 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     nbinsvector <- c(nbins)
     # We keep track of the chains, and of the history in "allchains"...
     chains <- as.matrix(target@rinit(AP@nchains))
-    if (AP@storeall){
-        allchains <- array(NA, dim = c(AP@niterations + 1, AP@nchains, target@dimension))
-        allchains[1,,] <- chains
+    # We keep track of the log densities computed along the iterations ...
+    currentlogtarget <- target@logdensity(chains, target@parameters)
+    if (AP@saveeverynth > 0){
+      nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
+      allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
+      nstoredchains <- 1
+      allchains[nstoredchains,,] <- chains
+      alllogtarget <- matrix(NA, nrow = nallchains, ncol = AP@nchains)
+      alllogtarget[nstoredchains,] <- currentlogtarget
+    }
+    if (AP@computemean){
+        sumchains <- chains
     }
     acceptrates <- c()
     # Setting the proposal distribution for the MH kernel
@@ -105,10 +114,6 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         proposal@adaptiveproposal <- FALSE
         cat("switching off adaptive proposal, because the target is discrete\n")
     }
-    # We keep track of the log densities computed along the iterations ...
-    alllogtarget <- matrix(NA, nrow = (AP@niterations + 1), ncol = AP@nchains)
-    currentlogtarget <- target@logdensity(chains, target@parameters)
-    alllogtarget[1,] <- currentlogtarget
     # We compute the locations of the chains, that is, in which 
     # bins they are.
     currentreaction <- binning@position(chains, currentlogtarget)
@@ -130,11 +135,16 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         #                          currentlocations, currentreaction, logtheta[[iteration]], 
         #                          AP, binning, target, proposalcovmatrix)
         chains <- mhresults$newchains
-        if (AP@storeall)
-            allchains[iteration + 1,,] <- chains
+        if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){
+            nstoredchains <- nstoredchains + 1
+            allchains[nstoredchains,,] <- chains
+            alllogtarget[nstoredchains,] <- currentlogtarget
+        }
+        if (AP@computemean){
+            sumchains <- sumchains + chains
+        }
         acceptrates <- c(acceptrates, mean(mhresults$accepts))
         currentlogtarget <- mhresults$newlogtarget
-        alllogtarget[iteration + 1,] <- currentlogtarget
         currentreaction <- mhresults$newreaction
         #print("currentlocations:")
         #print(currentlocations)
@@ -167,15 +177,8 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         ## update the inner distribution of the chains in each bin
         ## (proportions in the left hand side of each bin)
         if (binning@autobinning){
-#            print("aaah")
-#            print(currentreaction)
-#            print(currentlocations)
-#            print(binning@bins)
-#            print(slotNames(binning))
-#            print("?")
             innerbinleftcount <- innerbinleftcount + getInnerLeftCounts(binning,
                                             currentreaction, currentlocations)
-            #print("tchoum")
         } 
         ## check if flat histogram is reached ...
         if (binning@useFH){
@@ -223,12 +226,16 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     results <- list(chains = chains, acceptrates = acceptrates, logtheta = logtheta,
                 finallocations = currentlocations, FHtimes = FHtimes, 
                 bins = binning@bins, 
-                alllogtarget = alllogtarget, splitTimes = splitTimes, nbins = nbinsvector,
+                splitTimes = splitTimes, nbins = nbinsvector,
                 binshistory = binshistory, khistory = khistory, bincount = bincount)
     if (proposal@adaptiveproposal)
         results$sigma <- sigma
-    if (AP@storeall)
+    if (AP@saveeverynth > 0){
         results$allchains <- allchains
+        results$alllogtarget <- alllogtarget
+    }
+    if (AP@computemean)
+        results$meanchains <- sumchains / (AP@niterations + 1)
     return(results)
 }
 
