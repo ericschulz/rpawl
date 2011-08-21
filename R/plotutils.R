@@ -105,7 +105,7 @@ PlotLogTheta <- function(results){
     mthetaDF <- melt(logthetaDF, id = c("iterations"))
     g <- ggplot(mthetaDF, aes(x = iterations, y = value, colour = variable))
     g <- g + geom_line()
-    g <- g + opts(title = "Log theta estimators")
+    g <- g + opts(title = "Log theta estimators", legend.position = "none")
     return(g)
 }     
 

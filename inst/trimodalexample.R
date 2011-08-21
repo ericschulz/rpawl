@@ -64,7 +64,7 @@ g <- ggplot(data = subchains, aes(x = X1, y = X2))
 g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 g <- g + opts(legend.position = "none")
-ggsave(g, file ="TrimodalCloud.png")
+ggsave(g, file = "TrimodalCloud.png")
 
 # trace plot of log theta
 logtheta <- pawlresults$logtheta
@@ -148,7 +148,7 @@ dev.off()
 #### evaluations. Since we don't use a preliminary exploration here,
 #### the chains are run for N + Nprelim iterations.
 ##
-#mhparameters <- tuningparameters(nchains = N, niterations = T + Tprelim, adaptiveproposal = TRUE,
+#mhparameters <- tuningparameters(nchains = N, niterations = T + Tprelim,
 #                                 storeall = TRUE) 
 ##
 ##### launching the algorithm...
