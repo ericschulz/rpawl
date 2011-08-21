@@ -48,12 +48,13 @@ PlotComp1vsComp2 <- function(results, comp1, comp2 ){
         chains <- ConvertResults(results)
     }
     T <- max(chains$iterations)
-    burnin <- min(1000, T / 10)
+    burnin <- floor(min(1000, T / 10))
     subchains <- subset(chains, iterations > burnin)
-    maxnumberpoints <- max(5000, T / 50)
-    iterstep <- max(floor(T / maxnumberpoints), 1)
+    totalnpoints <- dim(subchains)[1]
+    subchains$index <- 1:totalnpoints
+    maxnumberpoints <- 50000
+    subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
     library(ggplot2)
-    subchains <- subset(subchains, iterations %% iterstep == 0)
     g <- ggplot(data = subchains, aes_string(x = comp1, y = comp2))
     g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
     g <- g + xlab(comp1) + ylab(comp2)
@@ -71,9 +72,10 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
     T <- max(chains$iterations)
     burnin <- min(1000, T / 10)
     subchains <- subset(chains, iterations > burnin)
-    maxnumberpoints <- max(5000, T / 50)
-    iterstep <- max(floor(T / maxnumberpoints), 1)
-    subchains <- subset(subchains, iterations %% iterstep == 0)
+    totalnpoints <- dim(subchains)[1]
+    subchains$index <- 1:totalnpoints
+    maxnumberpoints <- 50000
+    subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
     library(ggplot2)
     g <- ggplot(subchains, aes_string(x = comp1, y = comp2))
     g <- g + stat_bin2d() + geom_density2d()
@@ -133,7 +135,7 @@ PlotNbins <- function(results){
         g <- g + opts(title = "Number of bins along the iterations")
         return(g)
     } else {
-        return(paste("number of bins always was equal to", length(results$bins)))
+        return(paste("number of bins always was equal to", length(results$finalbins)))
     }
 }
 
@@ -186,7 +188,7 @@ PlotHistBin <- function(results, binning){
          xlab = paste("binned coordinate", sep = ""), prob = TRUE,
          col = "orange")
     abline(v = binning@bins, lwd = 2)
-    abline(v = results$bins, lwd = 2, lty = 3)
+    abline(v = results$finalbins, lwd = 2, lty = 3)
 }
 
 

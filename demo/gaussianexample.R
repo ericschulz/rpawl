@@ -16,23 +16,23 @@ gaussiantarget <- target(name = "gaussian", dimension = 1,
 # setting a seed for the RNG
 set.seed(17)
 
-######
-# Adaptive Metropolis-Hastings
-######
-mhparameters <- tuningparameters(nchains = 100, niterations = 1000, adaptiveproposal = TRUE,
-                                 storeall = TRUE) 
-amhresults <- adaptiveMH(gaussiantarget, mhparameters)
-# check that it's working
-PlotHist(results = amhresults, component = 1)
-curve(dnorm(x, mean = gaussiantarget@parameters$mean,
-            sd = gaussiantarget@parameters$sd), add = TRUE, lwd = 2)
+#######
+## Adaptive Metropolis-Hastings
+#######
+#mhparameters <- tuningparameters(nchains = 100, niterations = 10000, adaptiveproposal = TRUE,
+#                                 storeall = TRUE) 
+#amhresults <- adaptiveMH(gaussiantarget, mhparameters)
+## check that it's working
+#PlotHist(results = amhresults, component = 1)
+#curve(dnorm(x, mean = gaussiantarget@parameters$mean,
+#            sd = gaussiantarget@parameters$sd), add = TRUE, lwd = 2)
 
 
 ######
 # Parallel Adaptive Wang-Landau
 ######
 N <- 10
-T <- 1000
+T <- 10000
 # first create a "binning" object
 # here we bin according to the (only) dimension of the 
 # state space
@@ -42,17 +42,21 @@ getPos <- function(points, logdensity) points
 positionbinning <- binning(position = getPos,
                             name = "position",
                             binrange = c(-8, -3),
-                            ncuts = 2,
-                            autobinning = TRUE,
-                            desiredfreq = c(0.2, 0.2, 0.6),
+                            ncuts = 10,
+                            autobinning = FALSE,
                             splitThreshold = 0.2)
 # get a summary of the binning
 print(positionbinning)
-pawlparameters <- tuningparameters(nchains = N, niterations = T)
+pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
 # get a summary of the tuning parameters
 print(pawlparameters)
 # launching the algorithm...
+Rprof(tmp <- tempfile())
 pawlresults <- pawl(gaussiantarget, binning = positionbinning, AP = pawlparameters)
+Rprof()
+# display profiling results
+print(summaryRprof(tmp))
+unlink(tmp)
 # now some plotting:
 # plot the log thetas
 PlotLogTheta(pawlresults)

@@ -99,6 +99,8 @@ setMethod(f = "show", signature = "binning",
             cat("*name:", object@name, "\n")
             cat("*autobinning:", object@autobinning, "\n")
             cat("*bins:", object@bins, "\n")
+            cat("*Flat Histogram threshold:", object@fhthreshold, "\n")
+            cat("*split threshold:", object@splitThreshold, "\n")
             cat("*use Flat Histogram criterion:", object@useFH, "\n")
             cat("*use learning rate:", object@useLearningRate, "\n")
             cat("*min number of iterations between FH:", object@minSimEffort, "\n")

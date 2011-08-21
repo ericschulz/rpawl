@@ -1,7 +1,7 @@
 preexplorationAMH <- function(target, nchains, niterations){
     print("Pre exploration to get log energy range")
     preexpparameters <- tuningparameters(nchains = nchains, niterations = niterations,
-                                         adaptiveproposal = TRUE)
+                                         adaptiveproposal = TRUE, storeall = TRUE)
     preexp <- adaptiveMH(target, preexpparameters)
     burnin <- min(1000, niterations / 10)
     logtarget <- as.vector(preexp$alllogtarget[burnin:(niterations + 1),])

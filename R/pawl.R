@@ -1,32 +1,37 @@
+##
+# logtheta should be an array unless
+# autobinning == TRUE
+# it would speed things up
+##
 ###############
 ## Metropolis-Hastings transition kernel targeting the biased distribution
-MHkernelPawl <- function(currentChains, currentLogTarget, 
-                         currentLocations, currentReaction, logTheta, 
-                         nchains, binning, target, rproposal, dproposal, proposalparam){
-    rproposalresults <- rproposal(currentChains, proposalparam)
-    proposals <- rproposalresults$states
-    if (target@updateavailable){
-        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
-                                 target@parameters, rproposalresults$others)
-    } else {
-        proposalLogTarget <- target@logdensity(proposals, target@parameters)
-    }
-    #proposalLogTarget <- target@logdensity(proposals, target@parameters)
-    proposalReaction <- binning@position(proposals, proposalLogTarget)
-    proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
-    loguniforms <- log(runif(nchains))
-    accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
-                                - logTheta[proposalLocations]) 
-                               - (currentLogTarget + dproposal(currentChains, proposals, proposalparam)
-                                  - logTheta[currentLocations ])))
-    currentChains[accepts,] <- proposals[accepts,]
-    currentLogTarget[accepts] <- proposalLogTarget[accepts]
-    currentLocations[accepts] <- proposalLocations[accepts]
-    currentReaction[accepts] <- proposalReaction[accepts]
-    return(list(newchains = currentChains, newlogtarget = currentLogTarget, 
-                newlocations = currentLocations, newreaction = currentReaction, accepts = accepts))
-}
-
+#MHkernelPawl <- function(currentChains, currentLogTarget, 
+#                         currentLocations, currentReaction, logTheta, 
+#                         nchains, binning, target, rproposal, dproposal, proposalparam){
+#    rproposalresults <- rproposal(currentChains, proposalparam)
+#    proposals <- rproposalresults$states
+#    if (target@updateavailable){
+#        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
+#                                 target@parameters, rproposalresults$others)
+#    } else {
+#        proposalLogTarget <- target@logdensity(proposals, target@parameters)
+#    }
+#    #proposalLogTarget <- target@logdensity(proposals, target@parameters)
+#    proposalReaction <- binning@position(proposals, proposalLogTarget)
+#    proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
+#    loguniforms <- log(runif(nchains))
+#    accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
+#                                - logTheta[proposalLocations]) 
+#                               - (currentLogTarget + dproposal(currentChains, proposals, proposalparam)
+#                                  - logTheta[currentLocations ])))
+#    currentChains[accepts,] <- proposals[accepts,]
+#    currentLogTarget[accepts] <- proposalLogTarget[accepts]
+#    currentLocations[accepts] <- proposalLocations[accepts]
+#    currentReaction[accepts] <- proposalReaction[accepts]
+#    return(list(newchains = currentChains, newlogtarget = currentLogTarget, 
+#                newlocations = currentLocations, newreaction = currentReaction, accepts = accepts))
+#}
+#
 ## Function to check if the flat histogram criterion is reached
 ## Here c is taken to be 1 / d.
 checkFlatHistogram <- function(bincount, binning){
@@ -236,7 +241,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     }
     results <- list(chains = chains, acceptrates = acceptrates, logtheta = logtheta,
                 finallocations = currentlocations, FHtimes = FHtimes, 
-                bins = binning@bins, 
+                finalbins = binning@bins, finaldesiredfreq = binning@desiredfreq,
                 splitTimes = splitTimes, nbins = nbinsvector,
                 binshistory = binshistory, khistory = khistory, bincount = bincount)
     if (proposal@adaptiveproposal)
@@ -252,7 +257,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
 
 getFrequencies <- function(results, binning){
     finalfrequencies <- results$bincount / sum(results$bincount)
-    innerfinalbins <- results$bins
+    innerfinalbins <- results$finalbins
     innerfinalbins <- innerfinalbins[2:(length(innerfinalbins))]
     innerinitbins <- results$binshistory[[1]]
     innerinitbins <- innerinitbins[2:(length(innerinitbins))]
@@ -264,7 +269,7 @@ getFrequencies <- function(results, binning){
     }
     samplefrequencies <- c(samplefrequencies, finalfrequencies[length(finalfrequencies)])
     cat("Do the obtained frequencies match the desired frequencies?\n")
-    cat("final bins:", results$bins, "\n")
+    cat("final bins:", results$finalbins, "\n")
     cat("corresponding frequencies:", finalfrequencies, "\n")
     cat("initial bins:", results$binshistory[[1]], "\n")
     cat("desired frequencies: ", binning@desiredfreq, "\n")

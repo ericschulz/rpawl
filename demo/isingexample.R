@@ -221,7 +221,7 @@ proposalinstance <- proposal(rproposal = rproposal,
 ######
 # Adaptive Metropolis-Hastings
 ######
-mhparameters <- tuningparameters(nchains = 10, niterations = 250000, 
+mhparameters <- tuningparameters(nchains = 100, niterations = 250000, 
                                  storeall = FALSE)
 #mhparameters <- tuningparameters(nchains = 10, niterations = 50000, 
 #                                 saveeverynth = 5000, computemean = FALSE) 
@@ -267,7 +267,7 @@ unlink(tmp)
 #hist(subset(chains, iterations > 50)$logdens)
 #PlotHistBin(pawlresults, densitybinning)
 getFrequencies(pawlresults, densitybinning)
-#PlotLogTheta(pawlresults)
+PlotLogTheta(pawlresults)
 #
 #meanchains <- apply(pawlresults$allchains, c(2, 3), mean)
 #meanchains <- matrix(apply(meanchains, 2, mean), ncol = imgsize)
