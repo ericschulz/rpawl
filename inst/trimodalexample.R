@@ -1,3 +1,17 @@
+library(ggplot2)
+theme_update(
+axis.title.x = theme_text(size=25),
+axis.title.y = theme_text(size=25, angle = 90),
+axis.text.x = theme_text(size=25),
+axis.text.y = theme_text(size=25),
+strip.text.x = theme_text(size=25),
+strip.text.y = theme_text(size=25),
+plot.title = theme_text(size=25),
+legend.text = theme_text(size=25),
+legend.title = theme_text(size=25),
+strip.background = theme_rect(fill = "whitesmoke"))
+
+
 rm(list = ls())
 try(detach(package:PAWL, unload = TRUE), silent = TRUE)
 library(PAWL)
@@ -31,10 +45,28 @@ getFrequencies(pawlresults, densitybinning)
 chains <- ConvertResults(pawlresults)
 
 # 2D density plot of the components
-PlotDensComp1vsComp2(chains, "X1", "X2")
+T <- max(chains$iterations)
+burnin <- min(1000, T / 10)
+subchains <- subset(chains, iterations > burnin)
+totalnpoints <- dim(subchains)[1]
+subchains$index <- 1:totalnpoints
+maxnumberpoints <- 50000
+subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
+g <- ggplot(subchains, aes(x = X1, y = X2))
+g <- g + stat_bin2d() + geom_density2d()
+g <- g + opts(legend.position = "none")
+g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
+pdf(file = "Trimodal2Ddensity.pdf")
+print(g)
+dev.off()
 # cloud of points with colour representing the density values
-PlotComp1vsComp2(chains, "X1", "X2")
+g <- ggplot(data = subchains, aes(x = X1, y = X2))
+g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
+g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
+g <- g + opts(legend.position = "none")
+ggsave(g, file ="TrimodalCloud.png")
 
+# trace plot of log theta
 logtheta <- pawlresults$logtheta
 names(logtheta) <- 1:length(logtheta)
 st <- pawlresults$splitTimes
@@ -62,8 +94,11 @@ df <- foreach (i= 1:(length(st)-1), .combine = rbind) %do% {
 g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
 g <- g + geom_line() + scale_y_log()
 g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
+g <- g + opts(legend.position = "none")
 g <- g + xlim(0, 500)
+pdf(file = "TrimodalLogThetasSplit.pdf")
 print(g)
+dev.off()
 
 ### We can get precise estimates
 ## of the true thetas, which are equal (in bin i) to:
@@ -85,37 +120,29 @@ print(truethetas)
 # bin split and the final iteration
 g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
 g <- g + geom_line() + scale_y_log()
-g <- g + geom_hline(yintercept = truethetas)
+g <- g + geom_hline(yintercept = truethetas, linetype = 3)
+g <- g + opts(legend.position = "none")
 g <- g + xlim(st[2], T)
+pdf(file = "TrimodalLogThetasStable.pdf")
 print(g)
+dev.off()
 
-X11()
-par(mfrow = c(3, 1))
-PlotHist(chains, 1)
-PlotHist(pawlresults, 2)
-PlotHistBin(chains, densitybinning)
-par(mfrow = c(1, 1))
-
-PlotFH(pawlresults)
-
+# histogram of the energy values
 Xnames <- grep("X", names(chains), value = TRUE)
 positions <- data.frame(densitybinning@position(chains[,Xnames], chains$logdens))
 names(positions) <- c("energy")
-positions$index <- 1:(dim(positions)[1])
-g <- ggplot(data = subset(positions, index < 50000), aes(x = energy))
+npoints <- dim(positions)[1]
+positions$index <- 1:npoints
+maxnumberpoints <- 500000
+g <- ggplot(data = subset(positions, index > npoints - maxnumberpoints), aes(x = energy))
 g <- g + geom_histogram(binwidth = 0.025, aes(y = ..density..))
-g <- g + geom_vline(xintercept = densitybinning@bins, linesize = 2)
-g <- g + geom_vline(xintercept = pawlresults$finalbins, linetype = 2)
+g <- g + geom_vline(xintercept = densitybinning@bins, size = 2)
+g <- g + geom_vline(xintercept = pawlresults$finalbins, linetype = 2, size = 2)
+g <- g + xlim(0, 15)
+pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
 print(g)
+dev.off()
 
-
-
-hist(positions, nclass = 100, 
-     main = "Histogram of the binned coordinate", 
-     xlab = paste("binned coordinate", sep = ""), prob = TRUE,
-     col = "orange")
-abline(v = binning@bins, lwd = 2)
-abline(v = results$finalbins, lwd = 2, lty = 3)
 
 #### And now the adaptive MCMC with the same number of target density
 #### evaluations. Since we don't use a preliminary exploration here,

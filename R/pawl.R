@@ -1,8 +1,3 @@
-##
-# logtheta should be an array unless
-# autobinning == TRUE
-# it would speed things up
-##
 ###############
 ## Metropolis-Hastings transition kernel targeting the biased distribution
 #MHkernelPawl <- function(currentChains, currentLogTarget, 
