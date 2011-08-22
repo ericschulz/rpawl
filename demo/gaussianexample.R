@@ -32,7 +32,7 @@ set.seed(17)
 # Parallel Adaptive Wang-Landau
 ######
 N <- 10
-T <- 10000
+T <- 5000
 # first create a "binning" object
 # here we bin according to the (only) dimension of the 
 # state space

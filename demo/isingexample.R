@@ -15,8 +15,14 @@ targetparameters <- list(a = 1, b = 0.8, imgmatrix = IceFloe, targetdimension = 
                          imagesize = imgsize)
 
 ##### initialization 
-rInitDistribution <- function(size)
+rInitDistribution <- function(size){
   matrix(sample(0:1,  targetdimension * size, replace = TRUE), nrow = size)
+#  initpoints <- matrix(nrow = size, ncol = targetdimension)
+#  for(i in 1:size){
+#    initpoints[i,] <- c(IceFloe)
+#  }
+#  return(initpoints)
+}
 
 logdensity <- function(X, parameters){
     out <- .Call("IsingCounter", chains = X, dataimg = parameters$imgmatrix,
@@ -62,7 +68,7 @@ proposalinstance <- proposal(rproposal = rproposal,
 ######
 #mhparameters <- tuningparameters(nchains = 10, niterations = 2500, 
 #                                 storeall = FALSE)
-mhparameters <- tuningparameters(nchains = 10, niterations = 100000, 
+mhparameters <- tuningparameters(nchains = 100, niterations = 25000, 
                                  saveeverynth = 1000, computemean = TRUE) 
 print(mhparameters)
 
@@ -90,9 +96,10 @@ image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1),
 
 getLogEnergy <- function(points, logdensity) -logdensity
 densitybinning <- binning(position = getLogEnergy,
-                            name = "minus log target density",
-                            binrange = c(-5900, -5500),
-                            autobinning = FALSE)
+                          name = "minus log target density",
+                          binrange = c(-5900, -5600),
+                          ncuts = 9,
+                          autobinning = FALSE)
 #
 #
 Rprof(tmp <- tempfile())
@@ -105,9 +112,8 @@ unlink(tmp)
 #hist(subset(chains, iterations > 50)$logdens)
 #PlotHistBin(pawlresults, densitybinning)
 getFrequencies(pawlresults, densitybinning)
-PlotLogTheta(pawlresults)
-#
-#meanchains <- apply(pawlresults$allchains, c(2, 3), mean)
+X11();print(PlotLogTheta(pawlresults))
+meanchains <- apply(pawlresults$allchains, c(2, 3), mean)
 meanchains <- pawlresults$meanchains
 meanchains <- matrix(apply(meanchains, 2, mean), ncol = imgsize)
 X11()

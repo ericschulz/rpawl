@@ -97,7 +97,8 @@ PlotLogTheta <- function(results){
     substart <- st[i] + 1
     substop  <- st[i+1] + 1
     sublogtheta <- data.frame(results$logthetahistory[[i]])
-    thetaDF <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
+    #thetaDF <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
+    thetaDF <- sublogtheta
     names(thetaDF) <- paste("theta", seq(1, results$nbins[i]))
     thetaDF$iterations <- substart:substop
     mdata <- melt(thetaDF, id = c("iterations"))
@@ -105,8 +106,11 @@ PlotLogTheta <- function(results){
     mdata
   }
   # trace plot of log theta around the first split
-  g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
-  g <- g + geom_line() + scale_y_log()
+  df$i <- 1:(dim(df)[1])
+  maxnumberpoints <- 1000
+  iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
+  g <- ggplot(subset(df, i %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
+  g <- g + geom_line()
   g <- g + geom_vline(xintercept = results$splitTimes, linetype = 1)
   g <- g + opts(legend.position = "none")
   return(g)
