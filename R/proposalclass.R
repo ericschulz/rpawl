@@ -1,4 +1,5 @@
-## Fast rmvnorm
+#### the standard dmvnorm is slow because it checks a lot of thing (like is Sigma symmetric)
+### Fast rmvnorm
 fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
     ev <- eigen(sigma, symmetric = TRUE)
     retval <- ev$vectors %*% diag(sqrt(ev$values), length(ev$values)) %*% t(ev$vectors)

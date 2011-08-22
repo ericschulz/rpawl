@@ -42,9 +42,9 @@ getPos <- function(points, logdensity) points
 positionbinning <- binning(position = getPos,
                             name = "position",
                             binrange = c(-8, -3),
-                            ncuts = 10,
-                            autobinning = FALSE,
-                            splitThreshold = 0.2)
+                            ncuts = 2,
+                            autobinning = TRUE,
+                            splitThreshold = 0.17)
 # get a summary of the binning
 print(positionbinning)
 pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
@@ -59,13 +59,12 @@ print(summaryRprof(tmp))
 unlink(tmp)
 # now some plotting:
 # plot the log thetas
-PlotLogTheta(pawlresults)
+print(PlotLogTheta(pawlresults))
 # trace plot of all the variables
 # (here there is only one variable)
-PlotAllVar(pawlresults)
+#PlotAllVar(pawlresults)
 # and finally a histogram of the binned coordinate
 # (here the state space)
-PlotHistBin(pawlresults, positionbinning)
-getFrequencies(pawlresults, positionbinning)
-
+#PlotHistBin(pawlresults, positionbinning)
+#getFrequencies(pawlresults, positionbinning)
 

@@ -1,32 +1,3 @@
-###############
-## Metropolis-Hastings transition kernel targeting the biased distribution
-#MHkernelPawl <- function(currentChains, currentLogTarget, 
-#                         currentLocations, currentReaction, logTheta, 
-#                         nchains, binning, target, rproposal, dproposal, proposalparam){
-#    rproposalresults <- rproposal(currentChains, proposalparam)
-#    proposals <- rproposalresults$states
-#    if (target@updateavailable){
-#        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
-#                                 target@parameters, rproposalresults$others)
-#    } else {
-#        proposalLogTarget <- target@logdensity(proposals, target@parameters)
-#    }
-#    #proposalLogTarget <- target@logdensity(proposals, target@parameters)
-#    proposalReaction <- binning@position(proposals, proposalLogTarget)
-#    proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
-#    loguniforms <- log(runif(nchains))
-#    accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
-#                                - logTheta[proposalLocations]) 
-#                               - (currentLogTarget + dproposal(currentChains, proposals, proposalparam)
-#                                  - logTheta[currentLocations ])))
-#    currentChains[accepts,] <- proposals[accepts,]
-#    currentLogTarget[accepts] <- proposalLogTarget[accepts]
-#    currentLocations[accepts] <- proposalLocations[accepts]
-#    currentReaction[accepts] <- proposalReaction[accepts]
-#    return(list(newchains = currentChains, newlogtarget = currentLogTarget, 
-#                newlocations = currentLocations, newreaction = currentReaction, accepts = accepts))
-#}
-#
 ## Function to check if the flat histogram criterion is reached
 ## Here c is taken to be 1 / d.
 checkFlatHistogram <- function(bincount, binning){
@@ -45,8 +16,11 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     nbins <- length(binning@bins)
     # The bias is saved in a list (and not a matrix) because
     # the dimension might change, if bins are split
-    logtheta <- list()
-    logtheta[[1]] <- rep(0, nbins)
+    #logtheta <- list()
+    #logtheta[[1]] <- rep(0, nbins)
+    logtheta <- matrix(ncol = nbins, nrow = AP@niterations + 1)
+    logtheta[1,] <- 0
+    logthetahistory <- list()
     # keep track of the count of visits to each bin
     bincount <- rep(0, nbins)
     # as well as the count of visits to each bin since last FH
@@ -73,6 +47,17 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     currentlogtarget <- target@logdensity(chains, target@parameters)
     if (AP@saveeverynth > 0){
       nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
+      cat("saving every", AP@saveeverynth, "iterations\n")
+      totalsize <- nallchains * AP@nchains * target@dimension
+      cat("hence saving a vector of size", nallchains, "x", AP@nchains, "x", target@dimension, "=", totalsize, "\n")
+      if (totalsize > 10^8){
+        cat("which bigger than 10^8: you better have a lot of memory available!!\n")
+        suggestedmaxnallchains <- floor((10^8) / (target@dimension * AP@nchains)) + 1
+        cat("you can maybe set saveeverynth to something bigger than ", 
+            floor(AP@niterations / suggestedmaxnallchains) + 1, "\n")
+        cat("type anything to continue, or Ctrl-C to abort\n")
+        y<-scan(n=1)
+      }
       allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
       nstoredchains <- 1
       allchains[nstoredchains,,] <- chains
@@ -109,48 +94,37 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     # bins they are.
     currentreaction <- binning@position(chains, currentlogtarget)
     currentlocations <- binning@getLocations(binning@bins, currentreaction)
-    #print(currentlocations)
     thisiterationcount <- tabulate(currentlocations, nbins = nbins)
     bincount <- bincount + thisiterationcount
     tempbincount <- tempbincount + thisiterationcount
     lastFHtime <- 0
+    lastSplittime <- 0
+    iterstep <- max(100, AP@niterations / 50)
     for (iteration in 1:AP@niterations){
-        #print(iteration)
-        if (iteration %% 100 == 0){
-            cat("Iteration", iteration, "\n")
+        if (!(iteration %% iterstep)){
+          cat("Iteration", iteration, "/", AP@niterations, "\n")
         }
         ## Sample new values from the MH kernel targeting the biased distribution ...
-#        mhresults <- MHkernelPawl(chains, currentlogtarget, currentlocations, currentreaction,
-#                                  logtheta[[iteration]], AP@nchains, binning, target, 
-#                                  rproposal, dproposal, proposalparam)
-#MHkernelPawl <- function(currentChains, currentLogTarget, 
-#                         currentLocations, currentReaction, logTheta, 
-#                         nchains, binning, target, rproposal, dproposal, proposalparam){
-
-
         rproposalresults <- rproposal(chains, proposalparam)
         proposals <- rproposalresults$states
         if (target@updateavailable){
             proposalLogTarget <- currentlogtarget + target@logdensityupdate(chains, 
-                                                                            target@parameters, rproposalresults$others)
+                                              target@parameters, rproposalresults$others)
         } else {
             proposalLogTarget <- target@logdensity(proposals, target@parameters)
         }
-        #proposalLogTarget <- target@logdensity(proposals, target@parameters)
         proposalReaction <- binning@position(proposals, proposalLogTarget)
         proposalLocations <- binning@getLocations(binning@bins, proposalReaction)
         loguniforms <- log(runif(AP@nchains))
+
         accepts <- (loguniforms < ((proposalLogTarget + dproposal(proposals, chains, proposalparam)
-                                    - logtheta[[iteration]][proposalLocations]) 
+                                    - logtheta[iteration - lastSplittime,][proposalLocations]) 
         - (currentlogtarget + dproposal(chains, proposals, proposalparam)
-           - logtheta[[iteration]][currentlocations ])))
+           - logtheta[iteration - lastSplittime,][currentlocations ])))
         chains[accepts,] <- proposals[accepts,]
         currentlogtarget[accepts] <- proposalLogTarget[accepts]
         currentlocations[accepts] <- proposalLocations[accepts]
         currentreaction[accepts] <- proposalReaction[accepts]
-        #mhresults <- MHkernelPawl(chains, sigma[iteration], currentlogtarget, 
-        #                          currentlocations, currentreaction, logtheta[[iteration]], 
-        #                          AP, binning, target, proposalcovmatrix)
         if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){
             nstoredchains <- nstoredchains + 1
             allchains[nstoredchains,,] <- chains
@@ -160,8 +134,6 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
             sumchains <- sumchains + chains
         }
         acceptrates[iteration] <- mean(accepts)
-        #print("currentlocations:")
-        #print(currentlocations)
         ## update the proportions of visit in each bin
         thisiterationcount <- tabulate(currentlocations, nbins = nbins)
         bincount <- bincount + thisiterationcount 
@@ -171,14 +143,14 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         currentproportions <- thisiterationcount / AP@nchains
         if (binning@useLearningRate){
             if (binning@useFH){
-                logtheta[[iteration + 1]] <- logtheta[[iteration]] + 
+                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
                 binning@learningrate(k) * (currentproportions - binning@desiredfreq)
             } else {
-                logtheta[[iteration + 1]] <- logtheta[[iteration]] + 
+                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
                 binning@learningrate(iteration) * (currentproportions - binning@desiredfreq)
             }
         } else {
-            logtheta[[iteration + 1]] <- logtheta[[iteration]] + 
+            logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
                     (currentproportions - binning@desiredfreq)
         }
         ## update the adaptive proposal standard deviation ...
@@ -211,8 +183,9 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                     #binsToSplit <- findBinsResults$binsToSplit
                     #newcuts <- findBinsResults$newcuts
                     if (!is.null(foundbins$binsToSplit)){
+                        cat("split at time", iteration, "\n")
                         splitresults <- binsplitter(binning, foundbins, 
-                                              logtheta[[iteration + 1]], binning@desiredfreq)
+                                              logtheta[iteration + 1 - lastSplittime,], binning@desiredfreq)
                         newbins <- splitresults$newbins
                         nbins <- length(newbins)
                         binning@bins <- newbins
@@ -225,8 +198,16 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                         khistory[length(khistory)] <- 1
                         nbinsvector <- c(nbinsvector, nbins)
                         binshistory[[length(binshistory) + 1]] <- newbins
-                        splitTimes <- c(splitTimes, iteration + 1)
-                        logtheta[[iteration + 1]] <- splitresults$newthetas
+                        splitTimes <- c(splitTimes, iteration)
+                        lastSplittime <- iteration
+                        if (length(splitTimes) == 1){
+                          logthetahistory[[1]] <- logtheta[1:(iteration + 1),]
+                        } else {
+                          diffSplitTimes <- splitTimes[length(splitTimes)] - splitTimes[length(splitTimes) - 1]
+                          logthetahistory[[length(splitTimes)]] <- logtheta[1:(diffSplitTimes + 1),]
+                        }
+                        logtheta <- matrix(ncol = nbins, nrow = AP@niterations + 1 - iteration)
+                        logtheta[1,] <- splitresults$newthetas
                     }
                 }
                 tempbincount <- rep(0, nbins)
@@ -245,8 +226,11 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         results$allchains <- allchains
         results$alllogtarget <- alllogtarget
     }
-    if (AP@computemean)
+    if (AP@computemean){
         results$meanchains <- sumchains / (AP@niterations + 1)
+    }
+    logthetahistory[[length(logthetahistory) + 1]] <- logtheta
+    results$logthetahistory <- logthetahistory
     return(results)
 }
 

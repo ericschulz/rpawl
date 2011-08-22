@@ -1,39 +1,3 @@
-#### the standard dmvnorm is slow because it checks a lot of thing (like is Sigma symmetric)
-#### so I replace it with a faster version without checks (it's dangerous though!!!)
-fastdmvnorm <- function(x, mu, Sigma){
-    distval <- mahalanobis(x, center = mu, cov = Sigma)
-    logdet <- sum(log(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values))
-    logretval <- -(ncol(x) * log(2 * pi) + logdet + distval)/2
-    return(exp(logretval))
-}
-## Fast rmvnorm
-fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
-    ev <- eigen(sigma, symmetric = TRUE)
-    retval <- ev$vectors %*% diag(sqrt(ev$values), length(ev$values)) %*% t(ev$vectors)
-    retval <- matrix(rnorm(n * ncol(sigma)), nrow = n) %*% retval
-    retval <- sweep(retval, 2, mu, "+")
-    return(retval)
-}
-
-# Metropolis-Hastings transition kernel
-#MHkernel <- function(currentChains, currentLogTarget, nchains, target, 
-#                     rproposal, dproposal, proposalparam){
-#    rproposalresults <- rproposal(currentChains, proposalparam)
-#    proposals <- rproposalresults$states
-#    if (target@updateavailable){
-#        proposalLogTarget <- currentLogTarget + target@logdensityupdate(currentChains, 
-#                                 target@parameters, rproposalresults$others)
-#    } else {
-#        proposalLogTarget <- target@logdensity(proposals, target@parameters)
-#    }
-#    loguniforms <- log(runif(nchains))
-#    accepts <- (loguniforms < (proposalLogTarget + dproposal(proposals, currentChains, proposalparam)
-#                               - currentLogTarget) - dproposal(currentChains, proposals, proposalparam))
-#    currentChains[accepts,] <- proposals[accepts,]
-#    currentLogTarget[accepts] <- proposalLogTarget[accepts]
-#    return(list(newchains = currentChains, newlogtarget = currentLogTarget, accepts = accepts))
-#}
-#
 ## Adaptive Metropolis-Hastings 
 ## AP stands for Algorithmic Parameters
 adaptiveMH <- function(target, AP, proposal){
@@ -44,6 +8,17 @@ adaptiveMH <- function(target, AP, proposal){
     currentlogtarget <- target@logdensity(chains, target@parameters)
     if (AP@saveeverynth > 0){
       nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
+      cat("saving every", AP@saveeverynth, "iterations\n")
+      totalsize <- nallchains * AP@nchains * target@dimension
+      cat("hence saving a vector of size", nallchains, "x", AP@nchains, "x", target@dimension, "=", totalsize, "\n")
+      if (totalsize > 10^8){
+        cat("which bigger than 10^8: you better have a lot of memory available!!\n")
+        suggestedmaxnallchains <- floor((10^8) / (target@dimension * AP@nchains)) + 1
+        cat("you can maybe set saveeverynth to something bigger than ", 
+            floor(AP@niterations / suggestedmaxnallchains) + 1, "\n")
+        cat("type anything to continue, or Ctrl-C to abort\n")
+        y<-scan(n=1)
+      }
       allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
       alllogtarget <- matrix(NA, nrow = nallchains, ncol = AP@nchains)
       nstoredchains <- 1
@@ -70,11 +45,12 @@ adaptiveMH <- function(target, AP, proposal){
         proposal@adaptiveproposal <- FALSE
         cat("switching off adaptive proposal, because the target is discrete\n")
     }
+    iterstep <- max(100, AP@niterations / 50)
     for (iteration in 1:AP@niterations){
         ## at each time...
         #cat("iteration:", iteration, "\n")
-        if (!(iteration %% 100)){
-            cat("Iteration", iteration, "\n")
+        if (!(iteration %% iterstep)){
+            cat("Iteration", iteration, "/", AP@niterations, "\n")
         }
         ## sample new chains from the MH kernel ...
         rproposalresults <- rproposal(chains, proposalparam)

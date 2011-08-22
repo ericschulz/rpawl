@@ -1,3 +1,12 @@
+#### the standard dmvnorm is slow because it checks a lot of thing (like is Sigma symmetric)
+#### so I replace it with a faster version without checks (it's dangerous though!!!)
+fastdmvnorm <- function(x, mu, Sigma){
+    distval <- mahalanobis(x, center = mu, cov = Sigma)
+    logdet <- sum(log(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values))
+    logretval <- -(ncol(x) * log(2 * pi) + logdet + distval)/2
+    return(exp(logretval))
+}
+
 createTrimodalTarget <- function(){
   rinit <- function(size){
   fastrmvnorm(n = size, mu = c(0, 0), sigma =  diag(c(0.1, 0.1)))

@@ -87,26 +87,29 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
 #### (THIS SHOULD BE MODIFIED TO SHOW THE BIN SPLITS LIKE
 #### IN THE ARTICLE)
 PlotLogTheta <- function(results){
-    T <- length(results$acceptrates)
-    maxnumberpoints <- max(5000, T / 50)
-    iterstep <- max(floor(T / maxnumberpoints), 1)
-    if (is.null(results$splitTimes)){
-        lastsplit <- 1
-    } else {
-        lastsplit <- results$splitTimes[length(results$splitTimes)]
-    }
-    logtheta <- results$logtheta[lastsplit:(length(results$logtheta))]
-    logtheta <- matrix(unlist(logtheta), ncol = length(logtheta[[1]]), byrow = TRUE)
-    logthetaDF <- data.frame(logtheta)
-    names(logthetaDF) <- paste("logtheta", seq(1, results$nbins[length(results$nbins)]))
-    logthetaDF$iterations <- lastsplit:(lastsplit + dim(logthetaDF)[1] - 1)
-    logthetaDF <- subset(logthetaDF, iterations %% iterstep == 0)
-    library(ggplot2)
-    mthetaDF <- melt(logthetaDF, id = c("iterations"))
-    g <- ggplot(mthetaDF, aes(x = iterations, y = value, colour = variable))
-    g <- g + geom_line()
-    g <- g + opts(title = "Log theta estimators", legend.position = "none")
-    return(g)
+  st <- results$splitTimes
+  T <- length(results$acceptrates)
+  st <- c(0, st, T)
+  library(foreach)
+  library(reshape)
+  library(ggplot2)
+  df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
+    substart <- st[i] + 1
+    substop  <- st[i+1] + 1
+    sublogtheta <- data.frame(results$logthetahistory[[i]])
+    thetaDF <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
+    names(thetaDF) <- paste("theta", seq(1, results$nbins[i]))
+    thetaDF$iterations <- substart:substop
+    mdata <- melt(thetaDF, id = c("iterations"))
+    names(mdata) <- c("iterations", "estimator", "value")
+    mdata
+  }
+  # trace plot of log theta around the first split
+  g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
+  g <- g + geom_line() + scale_y_log()
+  g <- g + geom_vline(xintercept = results$splitTimes, linetype = 1)
+  g <- g + opts(legend.position = "none")
+  return(g)
 }     
 
 ## Plot of the temperature k

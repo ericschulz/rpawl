@@ -67,37 +67,8 @@ g <- g + opts(legend.position = "none")
 ggsave(g, file = "TrimodalCloud.png")
 
 # trace plot of log theta
-logtheta <- pawlresults$logtheta
-names(logtheta) <- 1:length(logtheta)
-st <- pawlresults$splitTimes
-st <- c(0, st, length(logtheta))
-library(foreach)
-library(reshape)
-allmdata <- list()
-logtheta[match(paste(1:2), names(logtheta))]
-matrix(unlist(logtheta[match(paste(1:2), names(logtheta))]), ncol = 6, byrow = TRUE)
-df <- foreach (i= 1:(length(st)-1), .combine = rbind) %do% {
-    substart <- st[i] + 1
-    substop  <- st[i+1] - 1
-    sublogtheta <- logtheta[match(paste(substart:substop), names(logtheta))]
-    sublogtheta <- matrix(unlist(sublogtheta), ncol=length(sublogtheta[[1]]), byrow=TRUE)
-    theta <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
-    thetaDF <- data.frame(theta)
-    names(thetaDF) <- paste("theta", seq(1, pawlresults$nbins[i]))
-    thetaDF$iterations <- substart:substop
-    mdata <- melt(thetaDF, id = c("iterations"))
-    names(mdata) <- c("iterations", "estimator", "value")
-    mdata
-}
-
-# trace plot of log theta around the first split
-g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
-g <- g + geom_line() + scale_y_log()
-g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
-g <- g + opts(legend.position = "none")
-g <- g + xlim(0, 500)
 pdf(file = "TrimodalLogThetasSplit.pdf")
-print(g)
+print(PlotLogTheta(pawlresults))
 dev.off()
 
 ### We can get precise estimates
