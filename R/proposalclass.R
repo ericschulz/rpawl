@@ -36,7 +36,7 @@ proposal.constructor <- function(...,
             adaptationrate <- function(x) x^(-0.6)
             cat("adaptationrate unspecified: set to x -> x^(-0.6)\n")
         } else {
-            adaptationrate <- function(...) NULL
+            adaptationrate <- function(x) NULL
         }
     }
     if (missing(sigma_init)){

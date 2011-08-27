@@ -33,7 +33,7 @@ Pierre Jacob <pierre.jacob@ensae.fr>
 %\seealso{
 %}
 \examples{
+  demo(discreteexample)
   demo(gaussianexample)
-  demo(trimodalexample)
-  #demo(mixture2kexample)
+  demo(mixture2kexample)
 }

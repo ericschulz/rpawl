@@ -9,7 +9,7 @@ createMixtureTarget <- function(mixturesample, mixturesize, ncomponents,
   if (!missing(mixturesample)){
     mixturesize <- length(mixturesample)
     cat("sample provided, of length", mixturesize, "\n")
-    rmixture <- function(size, parameters, ...) stop(sQuote("generate"), "is not specified")
+    rmixture <- function(size, parameters) stop(sQuote("generate"), "is not specified")
   } else {
     if (missing(mixtureparameters)){
       cat("mixtureparameters unspecified: putting some default parameters\n")

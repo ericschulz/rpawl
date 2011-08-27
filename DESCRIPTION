@@ -6,6 +6,6 @@ Date: 2011-08-11
 Author: Pierre
 Maintainer: Pierre <pierre.jacob@ensae.fr>
 Description: Implementation of the Parallel Adaptive Wang-Landau algorithm. Also implemented for comparison: parallel adaptive Metropolis-Hastings.
-Depends: mvtnorm, foreach, ggplot2
+Depends: mvtnorm, foreach, reshape, ggplot2
 License: GPL (>= 2)
 LazyLoad: yes
