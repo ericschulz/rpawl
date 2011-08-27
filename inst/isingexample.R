@@ -84,10 +84,8 @@ cat("binrange:", binrange, "\n")
 #meanchains <- matrix(apply(preexpresults$finalchains, 2, mean), ncol = imgsize)
 #image.plot(1:40, 1:40, 1 - meanchains, zlim=c(0,1), 
 #           col=gray((64:1)^2 / (64)^2), xlab=expression(X[1]), ylab=expression(X[2]))
-
 rinit <- function(size)
   preexpresults$finalchains
-
 isingtarget@rinit <- rinit
 mhparameters <- tuningparameters(nchains = nchains, niterations = 100000, 
                                  saveeverynth = 5000, computemean = TRUE) 
@@ -114,10 +112,10 @@ mhparameters <- tuningparameters(nchains = nchains, niterations = 100000,
 getLogEnergy <- function(points, logdensity) -logdensity
 densitybinning <- binning(position = getLogEnergy,
                           name = "minus log target density",
-                          binrange = c(-5900, -5400),
-                          #binrange = binrange,
+                          binrange = binrange,
                           ncuts = 20,
-                          autobinning = FALSE)
+                          autobinning = TRUE,
+                          alongenergy = TRUE)
 
 
 Rprof(tmp <- tempfile())
@@ -145,10 +143,6 @@ hist(pawlresults$allreaction, nclass = 1000)
 abline(v = densitybinning@bins, col = "red")
 abline(v = pawlresults$finalbins, col = "red", lty = 3)
 
-#pb <- (pawlresults$finaldesiredfreq - pawlresults$bincount / sum(pawlresults$bincount))/ pawlresults$finaldesiredfreq
-#which(pb > 0.5)
-#tabulate(densitybinning@getLocations(pawlresults$finalbins, pawlresults$allreaction), nbins = length(pawlresults$finalbins))
-#
 PlotFH(pawlresults)
 
 

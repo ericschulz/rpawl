@@ -25,7 +25,7 @@ mixture <- createMixtureTarget(mixturesize = 100, ncomponents = 4, mixtureparame
 print(mixture)
 
 N <- 10
-T <- 250000
+T <- 10^5
 betaindex <- mixture@dimension
 getBeta <- function(points, logdensity) exp(points[,betaindex])
 betabinning <- binning(position = getBeta,
@@ -66,7 +66,7 @@ burnin <- min(1000, T / 10)
 subchains <- subset(allchains, iterations > burnin)
 totalnpoints <- dim(subchains)[1]
 subchains$index <- 1:totalnpoints
-maxnumberpoints <- 500000
+maxnumberpoints <- min(totalnpoints, 500000)
 subchains <- subset(subchains, index %in% sample(1:totalnpoints, maxnumberpoints, replace = FALSE))
 schematictargets <- data.frame(cbind(c(rep(-3, 3), rep(0, 3), rep(3, 3), rep(6, 3)), 
                                      c(0, 3, 6, -3, 3, 6, -3, 0, 6, -3, 0, 3)))
