@@ -26,95 +26,86 @@ set.seed(17)
 ## check that it's working
 #PlotHist(results = amhresults, component = 1)
 #curve(dnorm(x, mean = gaussiantarget@parameters$mean,
-#            sd = gaussiantarget@parameters$sd), add = TRUE, lwd = 2)
+#            sd = gaussiantarget@parameters$sd), add = TRUE, lwd = 2, col = "red")
 
 
 ######
 # Parallel Adaptive Wang-Landau
 ######
-N <- 20
-T <- 5000
-preexpresults <- preexplorationAMH(gaussiantarget, N, 1000)
-binrange <- preexpresults$SuggestedRange
-rinit <- function(size)
-  preexpresults$finalchains
-gaussiantarget@rinit <- rinit
-# first create a "binning" object
-# here we bin according to the (only) dimension of the 
-# state space
-#getPos <- function(points, logdensity) points
+N <- 10
+T <- 20000
+
+# here we disable the adaptive proposal to highlight the automatic binning
+# mechanism
+proposal <- createAdaptiveRandomWalkProposal(N, gaussiantarget@dimension,
+                                             adaptiveproposal = FALSE)
+
+pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
+print(pawlparameters)
+
+#########
+# PAWL where we bin along the state space
+getPos <- function(points, logdensity) points
 ## we further specify some parameters, like the bins,
 ## the desired frequency in each bin
-#ncuts <- 2
-#positionbinning <- binning(position = getPos,
-#                            name = "position",
-#                            binrange = c(-20, -3),
-#                            ncuts = ncuts,
-#                            desiredfreq = c(0.1, rep(0.8/(ncuts-1), ncuts-1), 0.1),
-#                            useLearningRate = FALSE,
-#                            #desiredfreq = c(0.1, rep(0.2/18, 18), 0.7),
-#                            autobinning = FALSE,
-#                            splitThreshold = 0.17,
-#                            diagnose = TRUE)
+ncuts <- 2
+positionbinning <- binning(position = getPos,
+                            name = "position",
+                            binrange = c(-20, -3),
+                            ncuts = ncuts,
+                            useLearningRate = TRUE,
+                            autobinning = TRUE)
 
-
+print(positionbinning)
+pawlresults <- pawl(gaussiantarget, binning = positionbinning, AP = pawlparameters,
+                    proposal = proposal)
+# histogram of the binned coordinate
+X11(); PlotHistBin(pawlresults, positionbinning)
+#########
+## PAWL where we bin along the energy (= - log density)
 getPos <- function(points, logdensity) - logdensity 
+
+# we can get the range using pre exploratory mcmc
+preexpresults <- preexplorationAMH(gaussiantarget, N, 1000)
+binrange <- preexpresults$SuggestedRange
+# or specify it ourselves
+#binrange <- c(2.1, 20)
 # we further specify some parameters, like the bins,
-# the desired frequency in each bin
-ncuts <- 20 
+# the desired frequency in each bin...
+ncuts <- 2
 energybinning <- binning(position = getPos,
                             name = "energy",
                             binrange = binrange,
                             ncuts = ncuts,
                             useLearningRate = TRUE,
-                            #desiredfreq = c(0.1, rep(0.2/18, 18), 0.7),
-                            autobinning = FALSE,
-                            useFH = TRUE,
-                            #splitThreshold = 0.17,
-                            diagnose = TRUE)
+                            autobinning = TRUE,
+                            alongenergy = TRUE)
 
 
-
-proposal <- createAdaptiveRandomWalkProposal(N, gaussiantarget@dimension,
-                                             adaptiveproposal = FALSE)
-
-# get a summary of the binning
 print(energybinning)
-pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
-# get a summary of the tuning parameters
-print(pawlparameters)
 # launching the algorithm...
-#Rprof(tmp <- tempfile())
 pawlresults <- pawl(gaussiantarget, binning = energybinning, AP = pawlparameters,
                     proposal = proposal)
-#Rprof()
+# histogram of the binned coordinate
+X11(); PlotHistBin(pawlresults, energybinning)
+##
+#########
+
+#########
+## results
+#
 getFrequencies(pawlresults, energybinning)
-print(pawlresults$bincount)
-# display profiling results
-#print(summaryRprof(tmp))
-#unlink(tmp)
-# now some plotting:
-# plot the log thetas
+# Histogram of the chains
+X11(); PlotHist(pawlresults, 1)
+# Trace plot of the log theta penalties
 X11();print(PlotLogTheta(pawlresults))
 # trace plot of all the variables
 # (here there is only one variable)
-#PlotAllVar(pawlresults)
-# and finally a histogram of the binned coordinate
-# (here the state space)
-X11()
-#PlotHistBin(pawlresults, energybinning)
-#getFrequencies(pawlresults, positionbinning)
-chains <- ConvertResults(pawlresults)
-Xnames <- grep("X", names(chains), value = TRUE)
-positions <- energybinning@position(chains[,Xnames], chains$logdens)
-hist(positions, nclass = 1000, 
-     main = "Histogram of the binned coordinate", 
-     xlab = paste("binned coordinate", sep = ""), prob = TRUE,
-     col = "orange")
-#
-allreac <- (pawlresults$allreaction)
-bins = pawlresults$binshistory[[1]]
-allproportions <- tabulate(energybinning@getLocations(bins, 
-                                c(allreac)), nbins = length(bins))
+X11(); print(PlotAllVar(pawlresults))
 
-print(allproportions / sum(allproportions))
+
+
+
+
+
+

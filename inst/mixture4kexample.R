@@ -52,19 +52,13 @@ print(PlotLogTheta(pawlresults))
 X11();print(PlotHistBin(pawlresults, betabinning))
 
 chains <- ConvertResults(pawlresults)
-#pawlresults$allchains <- NULL
-#pawlresults$alllogtarget <- NULL
-#gc()
-#X11(); print(PlotHistBin(chains, betabinning))
-#X11(); print(PlotLogTheta(pawlresults))
-
-
 allchains <- subset(chains, select = c("X5", "X6", "X13", "indexchain", "iterations", "logdens"))
 rm(chains); gc(); 
 
 names(allchains) <- c("Mu1", "Mu2", "beta", "indexchain", "iterations", "logdens")
 alllocations <- betabinning@getLocations(pawlresults$finalbins, exp(allchains$beta))
-finaltheta <- exp(pawlresults$logtheta[[T]])
+logtheta <- pawlresults$logthetahistory[[length(pawlresults$logthetahistory)]]
+finaltheta <- exp(logtheta[dim(logtheta)[1],])
 finaltheta <- finaltheta / sum(finaltheta)
 allchains$importanceweights <- finaltheta[alllocations]
 burnin <- min(1000, T / 10)
@@ -74,8 +68,6 @@ totalnpoints <- dim(subchains)[1]
 subchains$index <- 1:totalnpoints
 maxnumberpoints <- 500000
 subchains <- subset(subchains, index %in% sample(1:totalnpoints, maxnumberpoints, replace = FALSE))
-#subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
-#
 schematictargets <- data.frame(cbind(c(rep(-3, 3), rep(0, 3), rep(3, 3), rep(6, 3)), 
                                      c(0, 3, 6, -3, 3, 6, -3, 0, 6, -3, 0, 3)))
 g <- ggplot(schematictargets, aes(x = X1, y = X2))
@@ -110,13 +102,6 @@ mhparameters <- tuningparameters(nchains = N, niterations = T,
 #### launching the algorithm...
 amhresults <- adaptiveMH(mixture, mhparameters)
 chains <- ConvertResults(amhresults)
-#pawlresults$allchains <- NULL
-#pawlresults$alllogtarget <- NULL
-#gc()
-#X11(); print(PlotHistBin(chains, betabinning))
-#X11(); print(PlotLogTheta(pawlresults))
-
-
 allchains <- subset(chains, select = c("X5", "X6", "X13", "indexchain", "iterations", "logdens"))
 rm(chains); gc(); 
 

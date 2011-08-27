@@ -176,7 +176,7 @@ PlotHist <- function(results, component){
     hist(chains[, component], nclass = 100, 
          main = "Histogram of the chains", 
          xlab = paste("x[", component, "]", sep = ""), prob = TRUE,
-         col = "orange")
+         col = "black")
 }
 
 ## Simple histogram of the binned component 
@@ -191,9 +191,9 @@ PlotHistBin <- function(results, binning){
     hist(positions, nclass = 100, 
          main = "Histogram of the binned coordinate", 
          xlab = paste("binned coordinate", sep = ""), prob = TRUE,
-         col = "orange")
-    abline(v = binning@bins, lwd = 2)
-    abline(v = results$finalbins, lwd = 2, lty = 3)
+         col = "black")
+    abline(v = binning@bins, lwd = 2, col = "red")
+    abline(v = results$finalbins, lwd = 2, lty = 3, col = "red")
 }
 
 

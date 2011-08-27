@@ -1,30 +1,25 @@
 setClass("binning",
          representation(position="function", getLocations="function",
-                        name = "character", autobinning = "logical",
+                        name = "character", 
                         bins = "numeric",
                         desiredfreq = "numeric", fhthreshold = "numeric",
                         splitThreshold = "numeric",
                         minSimEffort = "numeric", 
                         learningrate = "function", useLearningRate = "logical",
                         useFH = "logical", binmids = "numeric",
-                        diagnose = "logical"))
+                        autobinning = "logical",
+                        alongenergy = "logical"))
 
 setGeneric("binning", function(...)standardGeneric("binning"))
 binning.constructor <- function(position, name, 
                                 autobinning, ncuts, binrange, bins,
                                 desiredfreq, fhthreshold, splitThreshold,
                                 minSimEffort, learningrate, useLearningRate, 
-                                useFH, diagnose){
+                                useFH, alongenergy){
   if (missing(name))
     name <- "unspecified"
   if (missing(position))
     stop(sQuote("position"), "has to be specified")
-  #if (missing(getLocations))
-  #  stop(sQuote("getLocations"), "has to be specified")
-  if (missing(autobinning)){
-      autobinning <- FALSE
-      cat("autobinning unspecified: set to FALSE\n")
-  }
   if (missing(bins)){
       if (missing(binrange)){
           stop("error: ", sQuote("bins"), " is not specified, so you have to specify at least ",
@@ -69,8 +64,12 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
       useFH <- useLearningRate
       cat("useFH unspecified: set to", useLearningRate, "\n")
   }
-  if (missing(diagnose)){
-      diagnose <- FALSE
+  if (missing(autobinning)){
+      autobinning <- FALSE
+      cat("autobinning unspecified: set to FALSE\n")
+  }
+  if (missing(alongenergy)){
+      alongenergy <- FALSE
   }
   if (!useLearningRate & useFH){
     stop("error: you specified useFH to be TRUE and useLearningRate to be FALSE; check the help files")      
@@ -81,20 +80,20 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
       bins = bins, desiredfreq = desiredfreq, fhthreshold = fhthreshold,
       splitThreshold = splitThreshold, minSimEffort = minSimEffort,
       learningrate = learningrate, useLearningRate = useLearningRate,
-      useFH = useFH, diagnose = diagnose)
+      useFH = useFH, alongenergy = alongenergy)
 }
 setMethod("binning",
           definition = function(position, name, 
                                 autobinning, ncuts, binrange, bins, desiredfreq, fhthreshold,
                                 splitThreshold, minSimEffort,
-                                learningrate, useLearningRate, useFH, diagnose){
+                                learningrate, useLearningRate, useFH, alongenergy){
             binning.constructor(position = position,
                                 name = name, autobinning = autobinning, 
                                 ncuts = ncuts, binrange = binrange, bins = bins,
                                 desiredfreq = desiredfreq, fhthreshold = fhthreshold,
                                 splitThreshold = splitThreshold, minSimEffort = minSimEffort,
                                 learningrate = learningrate, useLearningRate = useLearningRate,
-                                useFH = useFH, diagnose = diagnose)
+                                useFH = useFH, alongenergy = alongenergy)
           })
 
 setMethod(f = "show", signature = "binning", 
@@ -130,10 +129,10 @@ getInnerLeftCounts <- function(object, currentreaction, currentlocations){
     return(innerbinleftcount)
 }
 # Find which bins would benefit from a split
-findBinsToSplit <- function(object, innerbinleftcount, bincount){
+findSkewedBins <- function(object, innerbinleftcount, bincount){
     nbins <- length(object@bins)
     innerbincount <- bincount[2:(nbins-1)]
-    binsToSplit <- c(); newcuts <- c()
+    skewedbins <- c(); newcuts <- c()
     for (indexbin in 1:(nbins - 2)){
         proportionleft <- innerbinleftcount[indexbin] / innerbincount[indexbin]
         if (is.na(proportionleft)){
@@ -142,14 +141,14 @@ findBinsToSplit <- function(object, innerbinleftcount, bincount){
         }
         if (proportionleft <= object@splitThreshold | 
             (1 - proportionleft) <= object@splitThreshold){
-            binsToSplit <- c(binsToSplit, indexbin)
+            skewedbins <- c(skewedbins, indexbin)
             newcuts <- c(newcuts, object@binmids[indexbin])
         }
     }
-    return(list(newcuts = newcuts, binsToSplit = binsToSplit))
+    return(list(newcuts = newcuts, skewedbins = skewedbins))
 }
 
-binsplitter <- function(object, foundbins, oldthetas, olddesiredfreq){
+binsplitter <- function(object, foundbins, oldthetas, olddesiredfreq, alongenergy){
     binsToSplit <- foundbins$binsToSplit
     newcuts <- foundbins$newcuts
     oldbins <- object@bins
@@ -161,9 +160,12 @@ binsplitter <- function(object, foundbins, oldthetas, olddesiredfreq){
     newdesiredfreq <- c(olddesiredfreq[1])
     for (i in 2:(oldnbins - 1)){
         if (sum(i == binsToSplit)){
-            #newthetas <- c(newthetas, rep(oldthetas[i] - log(2), 2))
-            newthetas <- c(newthetas, c(oldthetas[i] + log(2), 
-                                        oldthetas[i] - log(2)))
+            if (alongenergy){
+                newthetas <- c(newthetas, c(oldthetas[i] + log(2), 
+                                            oldthetas[i] - log(2)))
+            } else {
+                newthetas <- c(newthetas, rep(oldthetas[i] - log(2), 2))
+            }
             newdesiredfreq <- c(newdesiredfreq, rep(olddesiredfreq[i] / 2, 2))
         } else {
             newthetas <- c(newthetas, oldthetas[i])

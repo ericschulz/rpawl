@@ -67,16 +67,16 @@ proposalinstance <- proposal(rproposal = rproposal,
 ######
 # Adaptive Metropolis-Hastings
 ######
-#mhparameters <- tuningparameters(nchains = 10, niterations = 20000, 
-#                                 saveeverynth = 5000, computemean = FALSE) 
+mhparameters <- tuningparameters(nchains = 10, niterations = 20000, 
+                                 saveeverynth = 5000, computemean = FALSE) 
 #print(mhparameters)
 
 #Rprof(tmp <- tempfile())
 #amhresults <- adaptiveMH(isingtarget, mhparameters, proposalinstance)
 nchains <- 10
-#preexpresults <- preexplorationAMH(isingtarget, nchains, 20000, proposalinstance)
+preexpresults <- preexplorationAMH(isingtarget, nchains, 20000, proposalinstance)
 #save(preexpresults, file = "temp.RData")
-load(file = "temp.RData")
+#load(file = "temp.RData")
 #Rprof()
 binrange <- preexpresults$SuggestedRange
 cat("binrange:", binrange, "\n")
@@ -117,8 +117,7 @@ densitybinning <- binning(position = getLogEnergy,
                           binrange = c(-5900, -5400),
                           #binrange = binrange,
                           ncuts = 20,
-                          autobinning = FALSE,
-                          diagnose = TRUE)
+                          autobinning = FALSE)
 
 
 Rprof(tmp <- tempfile())

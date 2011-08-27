@@ -1,15 +1,15 @@
 ## Function to check if the flat histogram criterion is reached
-checkFlatHistogram <- function(bincount, binning){
-  difference <- abs((bincount / sum(bincount)) - binning@desiredfreq)
+checkFlatHistogram <- function(FHbincount, binning){
+  difference <- abs((FHbincount / sum(FHbincount)) - binning@desiredfreq)
   FHreached <- all(difference < binning@fhthreshold * binning@desiredfreq) &
-  all(bincount > 10)
+  all(FHbincount > 10)
   return(FHreached)
 }
 
 
 ## Particle Wang-Landau function with flat histogram criterion
 ## AP stands for Algorithmic Parameters
-pawl <- function(target, binning, AP, proposal, verbose = TRUE){
+pawl <- function(target, binning, AP, proposal){
     print("Launching Particle Wang-Landau algorithm ...") 
     # Init some algorithmic parameters ...
     nbins <- length(binning@bins)
@@ -21,18 +21,15 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     logtheta[1,] <- 0
     logthetahistory <- list()
     # keep track of the count of visits to each bin
-    bincount <- rep(0, nbins)
-    # as well as the count of visits to each bin since last FH
-    tempbincount <- rep(0, nbins)
+    # since the last flat histogram
+    if (binning@useFH)
+        FHbincount <- rep(0, nbins)
     # We compute the bins' middles in case the automatic bin split
     # mechanism is enabled. We also keep the count of visits in the bins,
     # as well as the count of visits in the half left part of the bins ...
     binning@binmids <- getBinMiddles(binning)
-    if (binning@autobinning){
-      innerbinleftcount <- rep(0, nbins - 2)
-    }
-    diagnoseactive <- binning@diagnose
-    if (binning@diagnose){
+    diagnoseactive <- binning@autobinning
+    if (diagnoseactive){
         diagnosebincount <- rep(0, nbins)
         diagnosehalfleftcount <- rep(0, nbins - 2)
     }
@@ -82,14 +79,9 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     currentreaction <- binning@position(chains, currentlogtarget)
     currentlocations <- binning@getLocations(binning@bins, currentreaction)
     thisiterationcount <- tabulate(currentlocations, nbins = nbins)
-    bincount <- bincount + thisiterationcount
-    tempbincount <- tempbincount + thisiterationcount
-    if (binning@autobinning){
-      innerbinleftcount <- getInnerLeftCounts(binning,
-                                              currentreaction, 
-                                              currentlocations)
-    }
-    if (binning@diagnose){
+    if (binning@useFH)
+        FHbincount <- FHbincount + thisiterationcount
+    if (diagnoseactive){
       diagnosebincount <- thisiterationcount
       diagnosehalfleftcount <- getInnerLeftCounts(binning,
                                                   currentreaction, 
@@ -155,22 +147,26 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
         }
         acceptrates[iteration] <- mean(accepts)
         ## update the proportions of visit in each bin
+        ## and the inner distribution of the chains in each bin
+        ## (proportions in the left hand side of each bin)
         thisiterationcount <- tabulate(currentlocations, nbins = nbins)
-        bincount <- bincount + thisiterationcount 
-        tempbincount <- tempbincount + thisiterationcount
+        if (binning@useFH)
+            FHbincount <- FHbincount + thisiterationcount
         if (diagnoseactive){
             diagnosebincount <- diagnosebincount + thisiterationcount
+            diagnosehalfleftcount <- diagnosehalfleftcount + getInnerLeftCounts(binning, currentreaction, currentlocations)
         }
         ## update the bias using all the chains ...
-        #currentproportions <- getProportions(length(binning@bins), currentlocations)
         currentproportions <- thisiterationcount / AP@nchains
         if (binning@useLearningRate){
             if (binning@useFH){
-                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
-                binning@learningrate(k) * (currentproportions - binning@desiredfreq)
+                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - 
+                             lastSplittime,] + binning@learningrate(k) * 
+                             (currentproportions - binning@desiredfreq)
             } else {
-                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
-                binning@learningrate(iteration) * (currentproportions - binning@desiredfreq)
+                logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - 
+                             lastSplittime,] + binning@learningrate(iteration) * 
+                             (currentproportions - binning@desiredfreq)
             }
         } else {
             logtheta[iteration + 1 - lastSplittime,] <- logtheta[iteration - lastSplittime,] + 
@@ -182,76 +178,62 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                 proposal@adaptationrate(iteration) * (2 * (mean(accepts) > 0.234) - 1))
             proposalparam$sigma <- sigma[iteration + 1]
         } 
-        ## update the inner distribution of the chains in each bin
-        ## (proportions in the left hand side of each bin)
-        if (binning@autobinning){
-            innerbinleftcount <- innerbinleftcount + getInnerLeftCounts(binning,
-                                            currentreaction, currentlocations)
-        } 
-        if (binning@diagnose){
-            increment <- getInnerLeftCounts(binning, currentreaction, currentlocations)
-            diagnosehalfleftcount <- diagnosehalfleftcount + increment
-        } 
-        ## diagnose bins
-#        if ((iteration - lastFHtime) > 5000 & binning@diagnose)
-#            diagnoseactive <- TRUE
-        #diagnoseiterationstep <- min(10000, floor((AP@niterations / 20)))
-        if (diagnoseactive){
+        if (diagnoseactive & binning@alongenergy){
             if (diagnosebincount[nbins] > 0){
-                cat("right end bin reached: disactivating diagnose\n")
+                cat("right end bin reached: disactivating bin diagnosis\n")
                 diagnoseactive <- FALSE
             }
         }
         if (diagnoseactive & iteration %% 1000 == 0 &
             iteration < AP@niterations){
-            cat("/** diagnostic at iteration", iteration, "\n")
+            cat("/** diagnosis at iteration", iteration, "\n")
             cat("* current number of bins =", nbins, "\n")
             allproportions <- diagnosebincount / sum(diagnosebincount)
-            foundbins <- findBinsToSplit(binning, 
+            foundbins <- findSkewedBins(binning, 
                                          diagnosehalfleftcount, diagnosebincount)
-            skewedbins <- foundbins$binsToSplit + 1
-            problem_bins <- ((binning@desiredfreq - allproportions) / binning@desiredfreq)
+            skewedbins <- foundbins$skewedbins + 1
+            problem_bins <- (binning@desiredfreq - allproportions) / binning@desiredfreq
             cat("desired freq - proportions:\n", (problem_bins), "\n")
             cat("* skewed bins:", skewedbins, "\n")
-            cat("* bins with not enough points:", which(diagnosebincount < 10 * AP@nchains), "\n")
+            cat("* bins with enough points to be split:", 
+                which(diagnosebincount > 10 * AP@nchains), "\n")
             bintosplit <- c()
-            for (binindex in 2:(nbins - 1)){
-              if (diagnosebincount[binindex] > 10 * AP@nchains){
-                #if (binindex %in% skewedbins){
-#                  if (all(allproportions[(binindex + 1):nbins] < 
-#                      binning@desiredfreq[(binindex + 1):nbins]) |
-#                      all(allproportions[(binindex + 1):nbins] > 
-#                      binning@desiredfreq[(binindex + 1):nbins]))
-                  if (all(problem_bins[(binindex + 1):nbins] > 0.9))
-                    bintosplit <- c(bintosplit, binindex)
-                #} #                else if(all(allproportions[1:(binindex - 1)] > 
-#                        binning@desiredfreq[1:(binindex - 1)]) |
-#                        all(allproportions[1:(binindex - 1)] < 
-#                        binning@desiredfreq[1:(binindex - 1)]))
-#                    bintosplit <- c(bintosplit, binindex)
-              }  
+            if (binning@alongenergy){
+                for (binindex in 2:(nbins - 1)){
+                    if (diagnosebincount[binindex] > 10 * AP@nchains){
+                        if (all(problem_bins[(binindex + 1):nbins] > 0.9)){
+                            bintosplit <- c(bintosplit, binindex)
+                        }
+                    }  
+                }
+            } else {
+                for (binindex in 2:(nbins - 1)){
+                    if (diagnosebincount[binindex] > 10 * AP@nchains &
+                        binindex %in% skewedbins){
+                        if (problem_bins[binindex + 1] > 0.9 |
+                            problem_bins[binindex - 1] > 0.9){
+                            bintosplit <- c(bintosplit, binindex)
+                        }
+                    }  
+                }
             }
-            cat("* bins to split:", bintosplit, "\n")
-            #bintosplit <- which(binIsAllright[3:length(binIsAllright)] == FALSE)[1] + 1
             if (!is.null(bintosplit)){
+                cat("* bins to split:", bintosplit, "\n")
                 newcuts <- binning@binmids[bintosplit - 1]
                 foundbins <- list(binsToSplit = bintosplit, newcuts = newcuts)
                 splitresults <- binsplitter(binning, foundbins, 
-                    logtheta[iteration + 1 - lastSplittime,], binning@desiredfreq)
+                    logtheta[iteration + 1 - lastSplittime,], binning@desiredfreq, 
+                    binning@alongenergy)
                 newbins <- splitresults$newbins
-                k <- 1
-                # "For the record"...
-                khistory[length(khistory)] <- 1
                 nbins <- length(newbins)
                 binning@bins <- newbins
                 binning@binmids <- getBinMiddles(binning)
                 binning@desiredfreq <- splitresults$newdesiredfreq
-                bincount <- rep(0, nbins)
-                tempbincount <- rep(0, nbins)
-                allreac <- c(allreaction[1:iteration,])
-                allloc <- binning@getLocations(binning@bins, allreac)
-                diagnosebincount <- tabulate(allloc, nbins = nbins)
-                diagnosehalfleftcount <- getInnerLeftCounts(binning, allreac, allloc)
+                if (binning@useFH){
+                    k <- 1
+                    khistory[length(khistory)] <- 1
+                    FHbincount <- rep(0, nbins)
+                }
                 diagnosebincount <- rep(0, nbins)
                 diagnosehalfleftcount <- rep(0, nbins - 2)
                 # update the current values that depend on bins
@@ -266,34 +248,29 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                 if (length(splitTimes) == 1){
                     logthetahistory[[1]] <- logtheta[1:(iteration + 1),]
                 } else {
-                    diffSplitTimes <- splitTimes[length(splitTimes)] - splitTimes[length(splitTimes) - 1]
-                    logthetahistory[[length(splitTimes)]] <- logtheta[1:(diffSplitTimes + 1),]
+                    diffSplitTimes <- splitTimes[length(splitTimes)] - 
+                        splitTimes[length(splitTimes) - 1]
+                    logthetahistory[[length(splitTimes)]] <- 
+                        logtheta[1:(diffSplitTimes + 1),]
                 }
                 logtheta <- matrix(ncol = nbins, nrow = AP@niterations + 1 - iteration)
                 logtheta[1,] <- splitresults$newthetas
             }
-            #scan("")
             cat("*/\n")
         }
 
         ## check if flat histogram is reached ...
         if (binning@useFH){
-            FHreached <- checkFlatHistogram(tempbincount, binning)
+            FHreached <- checkFlatHistogram(FHbincount, binning)
             enoughElapsedTime <- (iteration >= lastFHtime + binning@minSimEffort)
             if (FHreached && enoughElapsedTime){
-                if (verbose) cat("Flat histogram criterion met at iteration", iteration, "!\n")
-                ## if flat histogram is reached, update the temperature k ...
+                cat("Flat histogram criterion met at iteration", iteration, "!\n")
                 k <- k + 1
                 khistory <- c(khistory, k)
                 FHtimes <- c(FHtimes, iteration)
                 lastFHtime <- iteration
-                if (binning@diagnose){
-                    diagnoseactive <- FALSE
-                }
-                tempbincount <- rep(0, nbins)
-                if (binning@autobinning){
-                  innerbinleftcount <- rep(0, nbins - 2)
-                }
+                diagnoseactive <- FALSE
+                FHbincount <- rep(0, nbins)
             }
         }
     }
@@ -301,7 +278,7 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
                 finallocations = currentlocations, FHtimes = FHtimes, 
                 finalbins = binning@bins, finaldesiredfreq = binning@desiredfreq,
                 splitTimes = splitTimes, nbins = nbinsvector,
-                binshistory = binshistory, khistory = khistory, bincount = bincount)
+                binshistory = binshistory, khistory = khistory)
     if (proposal@adaptiveproposal)
         results$sigma <- sigma
     if (AP@saveeverynth > 0){
@@ -318,7 +295,9 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
 }
 
 getFrequencies <- function(results, binning){
-    finalfrequencies <- results$bincount / sum(results$bincount)
+    allproportions <- tabulate(binning@getLocations(results$finalbins, 
+                      c(pawlresults$allreaction)), nbins = length(results$finalbins))
+    finalfrequencies <- allproportions / sum(allproportions)
     innerfinalbins <- results$finalbins
     innerfinalbins <- innerfinalbins[2:(length(innerfinalbins))]
     innerinitbins <- results$binshistory[[1]]
@@ -330,12 +309,13 @@ getFrequencies <- function(results, binning){
         samplefrequencies <- c(samplefrequencies, sum(finalfrequencies[(1+indexstart):indexstop]))
     }
     samplefrequencies <- c(samplefrequencies, finalfrequencies[length(finalfrequencies)])
-    cat("Do the obtained frequencies match the desired frequencies?\n")
-    cat("final bins:", results$finalbins, "\n")
-    cat("corresponding frequencies:", finalfrequencies, "\n")
-    cat("initial bins:", results$binshistory[[1]], "\n")
-    cat("desired frequencies: ", binning@desiredfreq, "\n")
-    cat("obtained frequencies:", samplefrequencies, "\n")
+    cat("/* Frequency check\n")
+    cat("*Do the obtained frequencies match the desired frequencies?\n")
+    cat("*final bins:", results$finalbins, "\n")
+    cat("*corresponding frequencies:", finalfrequencies, "\n")
+    cat("*initial bins:", results$binshistory[[1]], "\n")
+    cat("*desired frequencies: ", binning@desiredfreq, "\n")
+    cat("*obtained frequencies:", samplefrequencies, "\n")
     return(samplefrequencies)
 }
 

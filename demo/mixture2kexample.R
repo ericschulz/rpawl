@@ -5,18 +5,18 @@ library(PAWL)
 set.seed(17)
 mixture <- createMixtureTarget()
 N <- 10
-T <- 2000
+T <- 20000
 betaindex <- mixture@dimension
 getBeta <- function(points, logdensity) exp(points[,betaindex])
 betabinning <- binning(position = getBeta,
                        name = "beta",
                        binrange = c(2, 16),
-                       autobinning = FALSE,
+                       autobinning = TRUE,
                        fhthreshold = 0.5,
-                       useLearningRate = FALSE)
+                       useLearningRate = TRUE)
 
 print(betabinning)
-pawlparameters <- tuningparameters(nchains = N, niterations = T)
+pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
 print(pawlparameters)
 
 ### Launching the algorithm...
@@ -48,7 +48,7 @@ print(PlotHistBin(pawlresults, betabinning))
 
 
 ### Adaptive MH for comparison
-mhparameters <- tuningparameters(nchains = N, niterations = T, adaptiveproposal = TRUE) 
+mhparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
 #### launching the algorithm...
 amhresults <- adaptiveMH(mixture, mhparameters)
 
