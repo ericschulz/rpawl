@@ -20,11 +20,11 @@ adaptiveMH <- function(target, AP, proposal){
         y<-scan(n=1)
       }
       allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
-      alllogtarget <- matrix(NA, nrow = nallchains, ncol = AP@nchains)
       nstoredchains <- 1
       allchains[nstoredchains,,] <- chains
-      alllogtarget[nstoredchains,] <- currentlogtarget
     }
+    alllogtarget <- matrix(NA, nrow = AP@niterations + 1, ncol = AP@nchains)
+    alllogtarget[1,] <- currentlogtarget
     if (AP@computemean){
         sumchains <- chains
     }
@@ -75,8 +75,8 @@ adaptiveMH <- function(target, AP, proposal){
         if (AP@saveeverynth > 0 & iteration %% AP@saveeverynth == 0){
             nstoredchains <- nstoredchains + 1
             allchains[nstoredchains,,] <- chains
-            alllogtarget[nstoredchains,] <- currentlogtarget
         }
+        alllogtarget[iteration + 1,] <- currentlogtarget
         if (AP@computemean){
             sumchains <- sumchains + chains
         }
@@ -87,8 +87,8 @@ adaptiveMH <- function(target, AP, proposal){
         results$sigma <- sigma
     if (AP@saveeverynth > 0){
         results$allchains <- allchains
-        results$alllogtarget <- alllogtarget
     }
+    results$alllogtarget <- alllogtarget
     if (AP@computemean)
         results$meanchains <- sumchains / (AP@niterations + 1)
     return(results)

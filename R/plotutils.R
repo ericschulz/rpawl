@@ -84,8 +84,6 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
 }
 
 ## Plot of the log theta since the last bin split
-#### (THIS SHOULD BE MODIFIED TO SHOW THE BIN SPLITS LIKE
-#### IN THE ARTICLE)
 PlotLogTheta <- function(results){
   st <- results$splitTimes
   T <- length(results$acceptrates)

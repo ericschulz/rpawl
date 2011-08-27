@@ -31,7 +31,8 @@ densitybinning <- binning(position = getLogEnergy,
                             binrange = preexp$SuggestedRange,
                             ncuts = 5,
                             useFH = TRUE,
-                            autobinning = TRUE,
+                            #autobinning = TRUE,
+                            diagnose = TRUE,
                             splitThreshold = 0.3)
 
 print(densitybinning)
@@ -68,7 +69,33 @@ ggsave(g, file = "TrimodalCloud.png")
 
 # trace plot of log theta
 pdf(file = "TrimodalLogThetasSplit.pdf")
-print(PlotLogTheta(pawlresults))
+st <- pawlresults$splitTimes
+T <- length(pawlresults$acceptrates)
+st <- c(0, st, T)
+library(foreach)
+library(reshape)
+library(ggplot2)
+df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
+    substart <- st[i] + 1
+    substop  <- st[i+1] + 1
+    sublogtheta <- data.frame(pawlresults$logthetahistory[[i]])
+    #thetaDF <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
+    thetaDF <- sublogtheta
+    names(thetaDF) <- paste("theta", seq(1, pawlresults$nbins[i]))
+    thetaDF$iterations <- substart:substop
+    mdata <- melt(thetaDF, id = c("iterations"))
+    names(mdata) <- c("iterations", "estimator", "value")
+    mdata
+}
+# trace plot of log theta around the first split
+df$i <- 1:(dim(df)[1])
+maxnumberpoints <- 1000
+iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
+g <- ggplot(subset(df, i %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
+g <- g + geom_line()
+g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
+g <- g + opts(legend.position = "none")
+print(g)
 dev.off()
 
 ### We can get precise estimates
@@ -85,7 +112,22 @@ locations <- densitybinning@getLocations(BINS, -proposedvalues[,"logtde"])
 truethetas <- tabulate(locations)
 truethetas <- truethetas / pawlresults$finaldesiredfreq
 truethetas <- truethetas / sum(truethetas)
-print(truethetas)
+
+df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
+    substart <- st[i] + 1
+    substop  <- st[i+1] + 1
+    sublogtheta <- data.frame(pawlresults$logthetahistory[[i]])
+    thetaDF <- exp(sublogtheta) / apply(exp(sublogtheta), 1, sum)
+    names(thetaDF) <- paste("theta", seq(1, pawlresults$nbins[i]))
+    thetaDF$iterations <- substart:substop
+    mdata <- melt(thetaDF, id = c("iterations"))
+    names(mdata) <- c("iterations", "estimator", "value")
+    mdata
+}
+# trace plot of log theta around the first split
+df$i <- 1:(dim(df)[1])
+maxnumberpoints <- 1000
+iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
 
 # trace plot of log theta between the last
 # bin split and the final iteration

@@ -6,14 +6,15 @@ setClass("binning",
                         splitThreshold = "numeric",
                         minSimEffort = "numeric", 
                         learningrate = "function", useLearningRate = "logical",
-                        useFH = "logical", binmids = "numeric"))
+                        useFH = "logical", binmids = "numeric",
+                        diagnose = "logical"))
 
 setGeneric("binning", function(...)standardGeneric("binning"))
 binning.constructor <- function(position, name, 
                                 autobinning, ncuts, binrange, bins,
                                 desiredfreq, fhthreshold, splitThreshold,
                                 minSimEffort, learningrate, useLearningRate, 
-                                useFH){
+                                useFH, diagnose){
   if (missing(name))
     name <- "unspecified"
   if (missing(position))
@@ -68,6 +69,9 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
       useFH <- useLearningRate
       cat("useFH unspecified: set to", useLearningRate, "\n")
   }
+  if (missing(diagnose)){
+      diagnose <- FALSE
+  }
   if (!useLearningRate & useFH){
     stop("error: you specified useFH to be TRUE and useLearningRate to be FALSE; check the help files")      
   }
@@ -77,20 +81,20 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
       bins = bins, desiredfreq = desiredfreq, fhthreshold = fhthreshold,
       splitThreshold = splitThreshold, minSimEffort = minSimEffort,
       learningrate = learningrate, useLearningRate = useLearningRate,
-      useFH = useFH)
+      useFH = useFH, diagnose = diagnose)
 }
 setMethod("binning",
           definition = function(position, name, 
                                 autobinning, ncuts, binrange, bins, desiredfreq, fhthreshold,
                                 splitThreshold, minSimEffort,
-                                learningrate, useLearningRate, useFH){
+                                learningrate, useLearningRate, useFH, diagnose){
             binning.constructor(position = position,
                                 name = name, autobinning = autobinning, 
                                 ncuts = ncuts, binrange = binrange, bins = bins,
                                 desiredfreq = desiredfreq, fhthreshold = fhthreshold,
                                 splitThreshold = splitThreshold, minSimEffort = minSimEffort,
                                 learningrate = learningrate, useLearningRate = useLearningRate,
-                                useFH = useFH)
+                                useFH = useFH, diagnose = diagnose)
           })
 
 setMethod(f = "show", signature = "binning", 
@@ -126,26 +130,22 @@ getInnerLeftCounts <- function(object, currentreaction, currentlocations){
     return(innerbinleftcount)
 }
 # Find which bins would benefit from a split
-findBinsToSplit <- function(object, innerbinleftcount, tempbincount){
+findBinsToSplit <- function(object, innerbinleftcount, bincount){
     nbins <- length(object@bins)
-    innerbincount <- tempbincount[2:(nbins-1)]
+    innerbincount <- bincount[2:(nbins-1)]
     binsToSplit <- c(); newcuts <- c()
     for (indexbin in 1:(nbins - 2)){
-        #print(innerbinleftcount)
-        #print(innerbincount)
         proportionleft <- innerbinleftcount[indexbin] / innerbincount[indexbin]
+        if (is.na(proportionleft)){
+            # in this case there is no point in that bin
+            next
+        }
         if (proportionleft <= object@splitThreshold | 
             (1 - proportionleft) <= object@splitThreshold){
-            #cat("inner bin", indexbin, ", proportion on the left side", proportionleft, "\n")
-            #cat("->hence we split inner bin", indexbin, "\n")
             binsToSplit <- c(binsToSplit, indexbin)
             newcuts <- c(newcuts, object@binmids[indexbin])
         }
     }
-    if (is.null(newcuts))
-        print("no bin to split")
-    else
-        cat("need to split inner bins:", binsToSplit, "\n")
     return(list(newcuts = newcuts, binsToSplit = binsToSplit))
 }
 
@@ -159,13 +159,15 @@ binsplitter <- function(object, foundbins, oldthetas, olddesiredfreq){
     # two biases theta_1(i) and theta_2(i), each equal to theta(i) / 2
     newthetas <- c(oldthetas[1])
     newdesiredfreq <- c(olddesiredfreq[1])
-    for (i in 1:(oldnbins - 2)){
+    for (i in 2:(oldnbins - 1)){
         if (sum(i == binsToSplit)){
-            newthetas <- c(newthetas, rep(oldthetas[i + 1] - log(2), 2))
-            newdesiredfreq <- c(newdesiredfreq, rep(olddesiredfreq[i + 1] / 2, 2))
+            #newthetas <- c(newthetas, rep(oldthetas[i] - log(2), 2))
+            newthetas <- c(newthetas, c(oldthetas[i] + log(2), 
+                                        oldthetas[i] - log(2)))
+            newdesiredfreq <- c(newdesiredfreq, rep(olddesiredfreq[i] / 2, 2))
         } else {
-            newthetas <- c(newthetas, oldthetas[i + 1])
-            newdesiredfreq <- c(newdesiredfreq, olddesiredfreq[i + 1])
+            newthetas <- c(newthetas, oldthetas[i])
+            newdesiredfreq <- c(newdesiredfreq, olddesiredfreq[i])
         }
     }
     newthetas <- c(newthetas, oldthetas[oldnbins])

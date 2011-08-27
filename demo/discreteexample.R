@@ -16,7 +16,7 @@ logdensity <- function(x, parameters){
 # is not applicable here
 transitionmatrix <- t(matrix(c(0.5, 0.5, 0.0,
                                0.3, 0.5, 0.2,
-                               0.4, 0.2, 0.4), ncol = 3))
+                               0.0, 0.6, 0.4), ncol = 3))
 
 proposalparam <- list(transitionmatrix = transitionmatrix, card = 3)
 # function that generates proposal:
@@ -46,12 +46,12 @@ rinit <- function(size) return(rep(1, size))
 discretetarget <- target(name = "discrete toy example", dimension = 1, type = "discrete",
                          rinit = rinit, logdensity = logdensity, parameters = parameters)
 # specify Metropolis-Hastings tuning parameters:
-mhparameters <- tuningparameters(nchains = 10, niterations = 1000, storeall = TRUE)
-Rprof(tmp <- tempfile())
+mhparameters <- tuningparameters(nchains = 100, niterations = 10000, storeall = TRUE)
+# Rprof(tmp <- tempfile())
 amhresults <- adaptiveMH(discretetarget, mhparameters, proposalinstance)
-Rprof()
-print(summaryRprof(tmp))
-unlink(tmp)
+# Rprof()
+# print(summaryRprof(tmp))
+# unlink(tmp)
 chains <- ConvertResults(amhresults)
 
 cat("target probabilities:", targetpdf, "\n")
@@ -75,3 +75,8 @@ cat("obtained frequencies:", pawlcount / sum(pawlcount), "\n")
 # show the trace plot of log theta:
 PlotLogTheta(pawlresults)
 
+counts <- tabulate(pawlchains$X1, nbins = 3)
+counts <- counts[1:2]
+counts <- counts / sum(counts)
+cat("obtained proportions inside bin 1:", counts, "\n")
+cat("compared to:", targetpdf[1:2] / sum(targetpdf[1:2]), "\n")

@@ -11,7 +11,7 @@ getBeta <- function(points, logdensity) exp(points[,betaindex])
 betabinning <- binning(position = getBeta,
                        name = "beta",
                        binrange = c(2, 16),
-                       autobinning = TRUE,
+                       autobinning = FALSE,
                        fhthreshold = 0.5,
                        useLearningRate = FALSE)
 
