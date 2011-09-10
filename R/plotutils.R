@@ -25,6 +25,7 @@ ConvertResults <- function(results){
     nbiterations <- dim(allchains)[1]
     nbchains <- dim(allchains)[2]
     targetdim <- dim(allchains)[3]
+    indexchain <- 0
     library(foreach)
     print("converting chains before plotting...")
     df <- foreach (indexchain = 1:(nbchains), .combine = rbind) %do% {
@@ -47,6 +48,7 @@ PlotComp1vsComp2 <- function(results, comp1, comp2 ){
     } else {
         chains <- ConvertResults(results)
     }
+    iterations <- 1; logdens <- 1; index <- 1
     T <- max(chains$iterations)
     burnin <- floor(min(1000, T / 10))
     subchains <- subset(chains, iterations > burnin)
@@ -69,6 +71,7 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
     } else {
         chains <- ConvertResults(results)
     }
+    iterations <- 1; index <- 1
     T <- max(chains$iterations)
     burnin <- min(1000, T / 10)
     subchains <- subset(chains, iterations > burnin)
@@ -91,6 +94,7 @@ PlotLogTheta <- function(results){
   library(foreach)
   library(reshape)
   library(ggplot2)
+  i <- 1; iterations <- 1; value <- 1; estimator <- 1
   df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
     substart <- st[i] + 1
     substop  <- st[i+1] + 1
@@ -134,7 +138,7 @@ PlotNbins <- function(results){
     if (!(is.null(results$splitTimes))){
         binincrease <- data.frame(cbind(c(1, results$splitTimes, T), 
                                         c(results$nbins, results$nbins[length(results$nbins)])))
-        g <- ggplot(binincrease, aes(x = X1, y = X2)) + geom_step()
+        g <- ggplot(binincrease, aes_string(x = "X1", y = "X2")) + geom_step()
         g <- g + ylim(0, 1.5 * results$nbins[length(results$nbins)])
         g <- g + ylab("Number of bins") + xlab("iterations")
         g <- g + opts(title = "Number of bins along the iterations")
@@ -151,6 +155,7 @@ PlotAllVar <- function(results){
     } else {
         chains <- ConvertResults(results)
     }
+    iterations <- 1; value <- 1; indexchain <- 1
     T <- max(chains$iterations)
     burnin <- min(1000, T / 10)
     chains <- subset(chains, iterations > burnin)

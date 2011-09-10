@@ -18,28 +18,31 @@ library(PAWL)
 
 set.seed(17)
 trimodal <- createTrimodalTarget()
-N <- 10
-Tprelim <- 1000
+N <- 2
+Tprelim <- 500
 preexp = preexplorationAMH(target = trimodal, nchains = N, niterations = Tprelim)
 print("Suggesting this energy range:")
 print(preexp$SuggestedRange)
 
-T <- 2000
+T <- 2500
 getLogEnergy <- function(points, logdensity) -logdensity
 densitybinning <- binning(position = getLogEnergy,
                             name = "minus log target density",
                             binrange = preexp$SuggestedRange,
-                            ncuts = 5,
+                            ncuts = 2,
                             useFH = TRUE,
-                            #autobinning = TRUE,
-                            diagnose = TRUE,
-                            splitThreshold = 0.3)
+                            autobinning = TRUE,
+                            smoothbinning = TRUE,
+                            splitThreshold = 0.25)
 
 print(densitybinning)
-pawlparameters <- tuningparameters(nchains = 1000, niterations = T, storeall = TRUE)
+pawlparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
 print(pawlparameters)
 
 ### Launching the algorithm...
+#rinit <- function(size)
+#  preexp$finalchains
+#trimodal@rinit <- rinit
 pawlresults <- pawl(trimodal, binning = densitybinning, AP = pawlparameters)
 getFrequencies(pawlresults, densitybinning)
 
@@ -57,18 +60,19 @@ g <- ggplot(subchains, aes(x = X1, y = X2))
 g <- g + stat_bin2d() + geom_density2d()
 g <- g + opts(legend.position = "none")
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
-pdf(file = "Trimodal2Ddensity.pdf")
-print(g)
-dev.off()
+#pdf(file = "Trimodal2Ddensity.pdf")
+#print(g)
+#dev.off()
 # cloud of points with colour representing the density values
 g <- ggplot(data = subchains, aes(x = X1, y = X2))
-g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
+#g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
+g <- g + geom_point(aes(alpha = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 g <- g + opts(legend.position = "none")
+g <- g + xlim(-15, 15) + ylim(-15, 15)
 ggsave(g, file = "TrimodalCloud.png")
 
 # trace plot of log theta
-pdf(file = "TrimodalLogThetasSplit.pdf")
 st <- pawlresults$splitTimes
 T <- length(pawlresults$acceptrates)
 st <- c(0, st, T)
@@ -88,13 +92,14 @@ df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
     mdata
 }
 # trace plot of log theta around the first split
-df$i <- 1:(dim(df)[1])
-maxnumberpoints <- 1000
-iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
-g <- ggplot(subset(df, i %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
-g <- g + geom_line()
+g <- ggplot(subset(df, iterations < st[length(st)-1] + 200), aes(x = iterations, y = value, colour = estimator))
+g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
+g <- g + geom_line() 
 g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
 g <- g + opts(legend.position = "none")
+#g <- g + xlim(0, st[length(st)-1] + 200)
+#pdf(file = "TrimodalLogThetasSplit.pdf", )
+pdf(file = "TrimodalLogThetasSplit.pdf", width = 21, height = 7)
 print(g)
 dev.off()
 
@@ -109,9 +114,11 @@ logtde <- trimodal@logdensity(proposedvalues, trimodal@parameters)
 proposedvalues <- cbind(proposedvalues, logtde)
 BINS <- pawlresults$finalbins
 locations <- densitybinning@getLocations(BINS, -proposedvalues[,"logtde"])
-truethetas <- tabulate(locations)
+truethetas <- tabulate(locations, nbins = length(BINS))
 truethetas <- truethetas / pawlresults$finaldesiredfreq
 truethetas <- truethetas / sum(truethetas)
+
+tabulate(densitybinning@getLocations(BINS, pawlresults$allreaction))
 
 df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
     substart <- st[i] + 1
@@ -126,16 +133,16 @@ df <- foreach (i= 1:(length(st) - 1), .combine = rbind) %do% {
 }
 # trace plot of log theta around the first split
 df$i <- 1:(dim(df)[1])
-maxnumberpoints <- 1000
+maxnumberpoints <- 10000
 iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
 
 # trace plot of log theta between the last
 # bin split and the final iteration
-g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
+g <- ggplot(subset(df, iterations %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
 g <- g + geom_line() + scale_y_log()
 g <- g + geom_hline(yintercept = truethetas, linetype = 3)
 g <- g + opts(legend.position = "none")
-g <- g + xlim(st[2], T)
+g <- g + xlim(st[length(st) - 1], T)
 pdf(file = "TrimodalLogThetasStable.pdf")
 print(g)
 dev.off()
@@ -149,9 +156,9 @@ positions$index <- 1:npoints
 maxnumberpoints <- 500000
 g <- ggplot(data = subset(positions, index > npoints - maxnumberpoints), aes(x = energy))
 g <- g + geom_histogram(binwidth = 0.025, aes(y = ..density..))
-g <- g + geom_vline(xintercept = densitybinning@bins, size = 2)
-g <- g + geom_vline(xintercept = pawlresults$finalbins, linetype = 2, size = 2)
-g <- g + xlim(0, 15)
+g <- g + geom_vline(xintercept = densitybinning@bins[-1], size = 2)
+g <- g + geom_vline(xintercept = pawlresults$finalbins[-1], linetype = 2, size = 2)
+#g <- g + xlim(0, 15)
 pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
 print(g)
 dev.off()
@@ -161,14 +168,59 @@ dev.off()
 #### evaluations. Since we don't use a preliminary exploration here,
 #### the chains are run for N + Nprelim iterations.
 ##
-#mhparameters <- tuningparameters(nchains = N, niterations = T + Tprelim,
-#                                 storeall = TRUE) 
+mhparameters <- tuningparameters(nchains = N, niterations = T + Tprelim,
+                                 storeall = TRUE) 
 ##
 ##### launching the algorithm...
-#amhresults <- adaptiveMH(trimodal, mhparameters)
+amhresults <- adaptiveMH(trimodal, mhparameters)
 #
 #PlotAllVar(amhresults)
-#PlotDensComp1vsComp2(amhresults, "X1", "X2")
+#pdf(file = "Marginal.pdf")
+#par(mfrow = c(2, 1))
+#PlotHist(amhresults, 1)
+#PlotHist(pawlresults, 1)
+#dev.off()
+#pdf(file = "Trimodal2DdensityAMH.pdf")
+#print(PlotDensComp1vsComp2(amhresults, "X1", "X2"))
+#dev.off()
+
+# 2D density plot of the components
+amhchains <- ConvertResults(amhresults)
+T <- max(amhchains$iterations)
+burnin <- min(1000, T / 10)
+subchains <- subset(amhchains, iterations > burnin)
+totalnpoints <- dim(subchains)[1]
+subchains$index <- 1:totalnpoints
+maxnumberpoints <- 50000
+subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
+# cloud of points with colour representing the density values
+g <- ggplot(data = subchains, aes(x = X1, y = X2))
+#g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
+g <- g + geom_point(aes(alpha = logdens))  
+g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
+g <- g + opts(legend.position = "none")
+g <- g + xlim(-15, 15) + ylim(-15, 15)
+ggsave(g, file = "TrimodalCloudAMH.png")
+
+
+
 #X11()
 #print(PlotComp1vsComp2(amhresults, "X1", "X2"))
 #
+
+#allchains <- ConvertResults(pawlresults)
+#
+#alllocations <- densitybinning@getLocations(pawlresults$finalbins, -allchains$logdens)
+#logtheta <- pawlresults$logthetahistory[[length(pawlresults$logthetahistory)]]
+#finaltheta <- exp(logtheta[dim(logtheta)[1],])
+#finaltheta <- finaltheta / sum(finaltheta)
+#allchains$importanceweights <- finaltheta[alllocations]
+#allchains$loc <- alllocations
+#
+#names(allchains)
+#g <- ggplot(data = allchains, aes(x = X1, weight = importanceweights))
+#g <- g + geom_density()
+#print(g)
+#PlotAllVar(amhresults)
+
+

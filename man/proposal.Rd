@@ -1,4 +1,4 @@
-\name{proposal-class}
+\name{proposal}
 \Rdversion{1.1}
 \docType{class}
 \alias{proposal-class}

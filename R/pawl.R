@@ -1,3 +1,19 @@
+###################################################
+#    This file is part of RPAWL.
+#
+#    RPAWL is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    RPAWL is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with RPAWL.  If not, see <http://www.gnu.org/licenses/>.
+###################################################
 ## Function to check if the flat histogram criterion is reached
 checkFlatHistogram <- function(FHbincount, binning){
   difference <- abs((FHbincount / sum(FHbincount)) - binning@desiredfreq)
@@ -108,7 +124,7 @@ pawl <- function(target, binning, AP, proposal){
       alllogtarget <- matrix(NA, nrow = nallchains, ncol = AP@nchains)
       alllogtarget[nstoredchains,] <- currentlogtarget
     }
-    allreaction <- matrix(nrow = AP@niterations, ncol = AP@nchains)
+    allreaction <- matrix(nrow = AP@niterations + 1, ncol = AP@nchains)
     allreaction[1,] <- currentreaction
     iterstep <- max(100, AP@niterations / 50)
     for (iteration in 1:AP@niterations){
@@ -141,7 +157,7 @@ pawl <- function(target, binning, AP, proposal){
             allchains[nstoredchains,,] <- chains
             alllogtarget[nstoredchains,] <- currentlogtarget
         }
-        allreaction[iteration,] <- currentreaction
+        allreaction[iteration + 1,] <- currentreaction
         if (AP@computemean){
             sumchains <- sumchains + chains
         }
@@ -179,12 +195,12 @@ pawl <- function(target, binning, AP, proposal){
             proposalparam$sigma <- sigma[iteration + 1]
         } 
         if (diagnoseactive & binning@alongenergy){
-            if (diagnosebincount[nbins] > 0){
+            if (diagnosebincount[nbins] > AP@nchains){
                 cat("right end bin reached: disactivating bin diagnosis\n")
                 diagnoseactive <- FALSE
             }
         }
-        if (diagnoseactive & iteration %% 1000 == 0 &
+        if (diagnoseactive & (iteration %% max(100, 1 + floor(AP@niterations / 100)) == 0) &
             iteration < AP@niterations){
             cat("/** diagnosis at iteration", iteration, "\n")
             cat("* current number of bins =", nbins, "\n")
@@ -210,7 +226,7 @@ pawl <- function(target, binning, AP, proposal){
                 for (binindex in 2:(nbins - 1)){
                     if (diagnosebincount[binindex] > 10 * AP@nchains &
                         binindex %in% skewedbins){
-                        if (problem_bins[binindex + 1] > 0.9 |
+                        if (binning@smoothbinning | problem_bins[binindex + 1] > 0.9 |
                             problem_bins[binindex - 1] > 0.9){
                             bintosplit <- c(bintosplit, binindex)
                         }
@@ -269,7 +285,8 @@ pawl <- function(target, binning, AP, proposal){
                 khistory <- c(khistory, k)
                 FHtimes <- c(FHtimes, iteration)
                 lastFHtime <- iteration
-                diagnoseactive <- FALSE
+                if (!binning@smoothbinning)
+                  diagnoseactive <- FALSE
                 FHbincount <- rep(0, nbins)
             }
         }
@@ -296,7 +313,7 @@ pawl <- function(target, binning, AP, proposal){
 
 getFrequencies <- function(results, binning){
     allproportions <- tabulate(binning@getLocations(results$finalbins, 
-                      c(pawlresults$allreaction)), nbins = length(results$finalbins))
+                      c(results$allreaction)), nbins = length(results$finalbins))
     finalfrequencies <- allproportions / sum(allproportions)
     innerfinalbins <- results$finalbins
     innerfinalbins <- innerfinalbins[2:(length(innerfinalbins))]

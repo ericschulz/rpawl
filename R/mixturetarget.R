@@ -1,3 +1,19 @@
+###################################################
+#    This file is part of RPAWL.
+#
+#    RPAWL is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    RPAWL is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with RPAWL.  If not, see <http://www.gnu.org/licenses/>.
+###################################################
 #rm(list = ls())
 #library(PAWL)
 createMixtureTarget <- function(mixturesample, mixturesize, ncomponents,
@@ -9,7 +25,7 @@ createMixtureTarget <- function(mixturesample, mixturesize, ncomponents,
   if (!missing(mixturesample)){
     mixturesize <- length(mixturesample)
     cat("sample provided, of length", mixturesize, "\n")
-    rmixture <- function(size, parameters) stop(sQuote("generate"), "is not specified")
+    rmixture <- function(n, MP) stop(sQuote("generate"), "is not specified")
   } else {
     if (missing(mixtureparameters)){
       cat("mixtureparameters unspecified: putting some default parameters\n")

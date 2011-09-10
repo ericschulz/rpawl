@@ -1,8 +1,10 @@
-\name{binning-class}
-\Rdversion{1.1}
-\docType{class}
+\name{binning}
 \alias{binning-class}
 \alias{binning}
+\alias{binning-methods}
+\alias{binning-method}
+\Rdversion{1.1}
+\docType{class}
 \alias{show,binning-method}
 
 \title{Class \code{"binning"}}

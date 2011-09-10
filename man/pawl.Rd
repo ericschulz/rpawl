@@ -1,24 +1,26 @@
-\name{adaptiveMH}
-\alias{adaptiveMH}
+\name{pawl}
+\alias{pawl}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-    Adaptive Metropolis-Hastings
+    Parallel Adaptive Wang-Landau
 }
 \description{
-    Adaptive Metropolis-Hastings algorithm, with parallel chains. The adaptation is such that
-    it targets an acceptance rate.
+    Implements the Parallel Adaptive Wang-Landau algorithm.
 }
 \usage{
-adaptiveMH(target, AP, proposal)
+    pawl(target, binning, AP, proposal)
 }
 \arguments{
     \item{target}{Object of class \code{\link{target}}: specifies the target distribution.
         See the help of \code{\link{target}}. If the target is discrete, target must contain the slots \code{dproposal}, \code{rproposal} and \code{proposalparam} that specify the proposal kernel in the Metropolis-Hastings step. Otherwise the default is an adaptive gaussian random walk.
     }
-    \item{AP}{Object of class \code{"tuningparameters"}: specifies the number of chains, the number
+    \item{binning}{Object of class \code{\link{binning}}, defining the initial bins used by the Wang-Landau algorithm.
+        The binning object also contains some parameters specifying if the automatic binning mechanism is active or not, for instance.
+    }
+    \item{AP}{Object of class \code{\link{tuningparameters}}: specifies the number of chains, the number
         of iterations, and what should be stored during along the run. See the help of \code{\link{tuningparameters}}.
     }
-    \item{proposal}{Object of class \code{"proposal"}: specifies the proposal distribution to be used to 
+    \item{proposal}{Object of class \code{\link{proposal}}: specifies the proposal distribution to be used to 
         propose new values and to compute the acceptance rate. See the help of \code{\link{proposal}}. If this
         is not specified and the target is continuous, then the default is an adaptive gaussian random walk.
     }
@@ -34,6 +36,9 @@ adaptiveMH(target, AP, proposal)
     \item{allchains}{If asked in the tuning parameters, the chain history.}
     \item{alllogtarget}{If asked in the tuning parameters, the associated log density evaluations.}
     \item{meanchains}{If asked in the tuning parameters, the mean (component-wise) of each chain.}
+    \item{logthetahistory}{If asked in the tuning parameters, all the log theta penalties.}
+    and other quantities, that you can browse by calling \code{"names(results)"} where \code{"results"} is the output
+    of the function.
 }
 %\references{
 %%% ~put references to the literature/web site here ~
@@ -49,7 +54,7 @@ adaptiveMH(target, AP, proposal)
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-    \code{\link{preexplorationAMH}}
+    \code{\link{adaptiveMH}, \link{binning}}
 }
 %\examples{
 %}
@@ -57,3 +62,4 @@ adaptiveMH(target, AP, proposal)
 % R documentation directory.
 \keyword{ ~kwd1 }
 \keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

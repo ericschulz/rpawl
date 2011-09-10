@@ -1,4 +1,4 @@
-\name{tuningparameters-class}
+\name{tuningparameters}
 \Rdversion{1.1}
 \docType{class}
 \alias{tuningparameters-class}
@@ -18,12 +18,10 @@ Objects can be created by calls of the function \code{"tuningparameters"}.
     representing the desired number of parallel chains.}
     \item{\code{niterations}:}{Object of class \code{"numeric"}: it should be an integer
     representing the desired number of iterations.}
-    \item{\code{adaptiveproposal}:}{Object of class \code{"logical"}: specifies whether an adaptive
-    proposal should be used, if available.}
-    \item{\code{adaptationrate}:}{Object of class \code{"function"}: specifies the rate at
-    which the adaptation of the proposal is performed. It should be a function defined on [0, + infty[ such that it is not integrable but its square is integrable, e.g. t -> 1/t for instance. The default is t -> t^{-0.6}.
-    }
-    \item{\code{sigma_init}:}{Object of class \code{"numeric"}: it should be a positive real number specifying the standard deviation of the proposal distribution at the first iteration. If the proposal is adaptive, it acts as a starting point for the adaptation. If it is not adaptive, then this value is used throughout all the iterations.}
+    \item{\code{computemean}:}{Object of class \code{"logical"}: specifies whether the mean of all chains should
+        be computed at each iteration (useful if the chains are not to be stored).}
+    \item{\code{saveeverynth}:}{Object of class \code{"numeric"}: specifies when the chains are to be stored:
+    for instance at every iteration (=1), every 10th iteration (=10), etc. Default is -1, meaning the chains are not stored.}
   }
 }
 \section{Methods}{
@@ -35,6 +33,7 @@ Objects can be created by calls of the function \code{"tuningparameters"}.
 %%  ~~put references to the literature/web site here~~
 %}
 \author{
+  Luke Bornn <l.bornn@stat.ubc.ca>,
     Pierre Jacob <pierre.jacob@ensae.fr>
 }
 %\note{

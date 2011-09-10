@@ -8,6 +8,7 @@ setClass("binning",
                         learningrate = "function", useLearningRate = "logical",
                         useFH = "logical", binmids = "numeric",
                         autobinning = "logical",
+                        smoothbinning = "logical",
                         alongenergy = "logical"))
 
 setGeneric("binning", function(...)standardGeneric("binning"))
@@ -15,7 +16,7 @@ binning.constructor <- function(position, name,
                                 autobinning, ncuts, binrange, bins,
                                 desiredfreq, fhthreshold, splitThreshold,
                                 minSimEffort, learningrate, useLearningRate, 
-                                useFH, alongenergy){
+                                useFH, alongenergy, smoothbinning){
   if (missing(name))
     name <- "unspecified"
   if (missing(position))
@@ -71,6 +72,9 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
   if (missing(alongenergy)){
       alongenergy <- FALSE
   }
+  if (missing(smoothbinning)){
+      smoothbinning <- FALSE
+  }
   if (!useLearningRate & useFH){
     stop("error: you specified useFH to be TRUE and useLearningRate to be FALSE; check the help files")      
   }
@@ -80,20 +84,20 @@ sQuote("binrange"), " (and maybe ", sQuote("ncuts"), " too)\n")
       bins = bins, desiredfreq = desiredfreq, fhthreshold = fhthreshold,
       splitThreshold = splitThreshold, minSimEffort = minSimEffort,
       learningrate = learningrate, useLearningRate = useLearningRate,
-      useFH = useFH, alongenergy = alongenergy)
+      useFH = useFH, alongenergy = alongenergy, smoothbinning = smoothbinning)
 }
 setMethod("binning",
           definition = function(position, name, 
                                 autobinning, ncuts, binrange, bins, desiredfreq, fhthreshold,
                                 splitThreshold, minSimEffort,
-                                learningrate, useLearningRate, useFH, alongenergy){
+                                learningrate, useLearningRate, useFH, alongenergy, smoothbinning){
             binning.constructor(position = position,
                                 name = name, autobinning = autobinning, 
                                 ncuts = ncuts, binrange = binrange, bins = bins,
                                 desiredfreq = desiredfreq, fhthreshold = fhthreshold,
                                 splitThreshold = splitThreshold, minSimEffort = minSimEffort,
                                 learningrate = learningrate, useLearningRate = useLearningRate,
-                                useFH = useFH, alongenergy = alongenergy)
+                                useFH = useFH, alongenergy = alongenergy, smoothbinning = smoothbinning)
           })
 
 setMethod(f = "show", signature = "binning", 

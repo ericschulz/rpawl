@@ -1,4 +1,4 @@
-\name{target-class}
+\name{target}
 \Rdversion{1.1}
 \docType{class}
 \alias{target-class}
@@ -39,7 +39,8 @@ continuous probability distributions.
 %%  ~~put references to the literature/web site here~~
 %}
 \author{
-Pierre Jacob <pierre.jacob@ensae.fr>
+    Luke Bornn <l.bornn@stat.ubc.ca>,
+    Pierre Jacob <pierre.jacob@ensae.fr>
 }
 %\note{
 %%  ~~further notes~~
