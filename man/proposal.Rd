@@ -3,6 +3,7 @@
 \docType{class}
 \alias{proposal-class}
 \alias{proposal}
+\alias{proposal,ANY-method}
 \alias{show,proposal-method}
 
 \title{Class \code{"proposal"}}

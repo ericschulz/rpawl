@@ -3,6 +3,7 @@
 \docType{class}
 \alias{target-class}
 \alias{target}
+\alias{target,ANY-method}
 \alias{show,target-method}
 
 \title{Class: target distribution}

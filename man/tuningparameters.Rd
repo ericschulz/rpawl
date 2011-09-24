@@ -3,6 +3,7 @@
 \docType{class}
 \alias{tuningparameters-class}
 \alias{tuningparameters}
+\alias{tuningparameters,ANY-method}
 \alias{show,tuningparameters-method}
 
 \title{Class \code{"tuningparameters"}}
