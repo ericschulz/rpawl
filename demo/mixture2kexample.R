@@ -5,7 +5,7 @@ library(PAWL)
 set.seed(17)
 mixture <- createMixtureTarget()
 N <- 10
-T <- 20000
+T <- 5000
 betaindex <- mixture@dimension
 getBeta <- function(points, logdensity) exp(points[,betaindex])
 betabinning <- binning(position = getBeta,
@@ -23,18 +23,18 @@ print(pawlparameters)
 pawlresults <- pawl(mixture, binning = betabinning, AP = pawlparameters)
 chains <- ConvertResults(pawlresults)
 getFrequencies(pawlresults, betabinning)
-print(PlotHistBin(pawlresults, betabinning))
+#print(PlotHistBin(pawlresults, betabinning))
 
 ##X11()
-print(PlotLogTheta(pawlresults))
-plot(pawlresults$sigma, type = "l")
+#print(PlotLogTheta(pawlresults))
+#plot(pawlresults$sigma, type = "l")
 ##X11()
 #PlotAllVar(chains)
 #X11()
 print(PlotComp1vsComp2(chains, "X3", "X4"))
 
 #X11()
-print(PlotHistBin(pawlresults, betabinning))
+#print(PlotHistBin(pawlresults, betabinning))
 #print(PlotHist(pawlresults, component = 7))
 #X11(); print(PlotHist(pawlresults, component = 3))
 
@@ -48,12 +48,12 @@ print(PlotHistBin(pawlresults, betabinning))
 
 
 ### Adaptive MH for comparison
-mhparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
+#mhparameters <- tuningparameters(nchains = N, niterations = T, storeall = TRUE)
 #### launching the algorithm...
-amhresults <- adaptiveMH(mixture, mhparameters)
+#amhresults <- adaptiveMH(mixture, mhparameters)
 
 #PlotAllVar(amhresults)
 #X11()
-print(PlotComp1vsComp2(amhresults, "X3", "X4"))
+#print(PlotComp1vsComp2(amhresults, "X3", "X4"))
 #X11(); print(PlotHist(amhresults, component = 3))
 #

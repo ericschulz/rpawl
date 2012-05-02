@@ -33,7 +33,7 @@ set.seed(17)
 # Parallel Adaptive Wang-Landau
 ######
 N <- 10
-T <- 20000
+T <- 2000
 
 # here we disable the adaptive proposal to highlight the automatic binning
 # mechanism
@@ -60,7 +60,7 @@ print(positionbinning)
 pawlresults <- pawl(gaussiantarget, binning = positionbinning, AP = pawlparameters,
                     proposal = proposal)
 # histogram of the binned coordinate
-X11(); PlotHistBin(pawlresults, positionbinning)
+PlotHistBin(pawlresults, positionbinning)
 #########
 ## PAWL where we bin along the energy (= - log density)
 getPos <- function(points, logdensity) - logdensity 
@@ -87,7 +87,7 @@ print(energybinning)
 pawlresults <- pawl(gaussiantarget, binning = energybinning, AP = pawlparameters,
                     proposal = proposal)
 # histogram of the binned coordinate
-X11(); PlotHistBin(pawlresults, energybinning)
+#PlotHistBin(pawlresults, energybinning)
 ##
 #########
 
@@ -96,12 +96,12 @@ X11(); PlotHistBin(pawlresults, energybinning)
 #
 getFrequencies(pawlresults, energybinning)
 # Histogram of the chains
-X11(); PlotHist(pawlresults, 1)
+#PlotHist(pawlresults, 1)
 # Trace plot of the log theta penalties
-X11();print(PlotLogTheta(pawlresults))
+#print(PlotLogTheta(pawlresults))
 # trace plot of all the variables
 # (here there is only one variable)
-X11(); print(PlotAllVar(pawlresults))
+#print(PlotAllVar(pawlresults))
 
 
 

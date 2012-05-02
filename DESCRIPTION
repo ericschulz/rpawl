@@ -1,10 +1,10 @@
 Package: PAWL
 Type: Package
 Title: Implementation of the PAWL algorithm
-Version: 0.3
+Version: 0.4
 Date: 2011-08-11
-Author: Pierre Jacob,  Luke Bornn
-Maintainer: Pierre Jacob <pierre.jacob@ensae.fr>
+Author: Luke Bornn, Pierre Jacob
+Maintainer: Luke Bornn <l.bornn@stat.ubc.ca>, Pierre Jacob <jacob@ceremade.dauphine.fr>
 Description: Implementation of the Parallel Adaptive Wang-Landau algorithm. Also implemented for comparison: parallel adaptive Metropolis-Hastings.
 Depends: methods, mvtnorm, foreach, reshape, ggplot2
 License: GPL (>= 2)

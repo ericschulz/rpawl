@@ -73,7 +73,7 @@ cat("PAWL: desired frequencies:", positionbinning@desiredfreq, "\n")
 pawlcount <- tabulate(getPos(pawlchains$X1, pawlchains$logdens), nbins = 2)
 cat("PAWL: obtained frequencies:", pawlcount / sum(pawlcount), "\n")
 # show the trace plot of log theta:
-PlotLogTheta(pawlresults)
+#PlotLogTheta(pawlresults)
 
 counts <- tabulate(pawlchains$X1, nbins = 3)
 counts <- counts[1:2]
