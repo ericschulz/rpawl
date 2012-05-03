@@ -65,12 +65,11 @@ g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 #dev.off()
 # cloud of points with colour representing the density values
 g <- ggplot(data = subchains, aes(x = X1, y = X2))
-#g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
 g <- g + geom_point(aes(alpha = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 g <- g + opts(legend.position = "none")
 g <- g + xlim(-15, 15) + ylim(-15, 15)
-ggsave(g, file = "TrimodalCloud.png")
+#ggsave(g, file = "TrimodalCloud.png")
 
 # trace plot of log theta
 st <- pawlresults$splitTimes
@@ -99,9 +98,9 @@ g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
 g <- g + opts(legend.position = "none")
 #g <- g + xlim(0, st[length(st)-1] + 200)
 #pdf(file = "TrimodalLogThetasSplit.pdf", )
-pdf(file = "TrimodalLogThetasSplit.pdf", width = 21, height = 7)
-print(g)
-dev.off()
+#pdf(file = "TrimodalLogThetasSplit.pdf", width = 21, height = 7)
+#print(g)
+#dev.off()
 
 ### We can get precise estimates
 ## of the true thetas, which are equal (in bin i) to:
@@ -139,13 +138,13 @@ iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
 # trace plot of log theta between the last
 # bin split and the final iteration
 g <- ggplot(subset(df, iterations %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
-g <- g + geom_line() + scale_y_log()
+g <- g + geom_line() + scale_y_log10()
 g <- g + geom_hline(yintercept = truethetas, linetype = 3)
 g <- g + opts(legend.position = "none")
 g <- g + xlim(st[length(st) - 1], T)
-pdf(file = "TrimodalLogThetasStable.pdf")
-print(g)
-dev.off()
+#pdf(file = "TrimodalLogThetasStable.pdf")
+#print(g)
+#dev.off()
 
 # histogram of the energy values
 Xnames <- grep("X", names(chains), value = TRUE)
@@ -158,11 +157,10 @@ g <- ggplot(data = subset(positions, index > npoints - maxnumberpoints), aes(x =
 g <- g + geom_histogram(binwidth = 0.025, aes(y = ..density..))
 g <- g + geom_vline(xintercept = densitybinning@bins[-1], size = 2)
 g <- g + geom_vline(xintercept = pawlresults$finalbins[-1], linetype = 2, size = 2)
-#g <- g + xlim(0, 15)
-pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
-print(g)
-dev.off()
-
+%pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
+%print(g)
+%dev.off()
+%
 
 #### And now the adaptive MCMC with the same number of target density
 #### evaluations. Since we don't use a preliminary exploration here,
@@ -195,32 +193,9 @@ maxnumberpoints <- 50000
 subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
 # cloud of points with colour representing the density values
 g <- ggplot(data = subchains, aes(x = X1, y = X2))
-#g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
 g <- g + geom_point(aes(alpha = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 g <- g + opts(legend.position = "none")
 g <- g + xlim(-15, 15) + ylim(-15, 15)
-ggsave(g, file = "TrimodalCloudAMH.png")
-
-
-
-#X11()
-#print(PlotComp1vsComp2(amhresults, "X1", "X2"))
-#
-
-#allchains <- ConvertResults(pawlresults)
-#
-#alllocations <- densitybinning@getLocations(pawlresults$finalbins, -allchains$logdens)
-#logtheta <- pawlresults$logthetahistory[[length(pawlresults$logthetahistory)]]
-#finaltheta <- exp(logtheta[dim(logtheta)[1],])
-#finaltheta <- finaltheta / sum(finaltheta)
-#allchains$importanceweights <- finaltheta[alllocations]
-#allchains$loc <- alllocations
-#
-#names(allchains)
-#g <- ggplot(data = allchains, aes(x = X1, weight = importanceweights))
-#g <- g + geom_density()
-#print(g)
-#PlotAllVar(amhresults)
-
+#ggsave(g, file = "TrimodalCloudAMH.png")
 
