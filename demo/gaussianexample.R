@@ -1,6 +1,6 @@
 # remove all objects
-graphics.off()
-rm(list = ls())
+#graphics.off()
+#rm(list = ls())
 # try to detach the package if it was already loaded
 try(detach(package:PAWL, unload = TRUE), silent = TRUE)
 # load the package

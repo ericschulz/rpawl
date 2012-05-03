@@ -12,7 +12,7 @@
   target distribution.
 }
 \usage{
-preexplorationAMH(target, nchains, niterations, proposal)
+preexplorationAMH(target, nchains, niterations, proposal, verbose)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +26,10 @@ preexplorationAMH(target, nchains, niterations, proposal)
     \item{proposal}{Object of class \code{"proposal"}: specifies the proposal distribution to be used to 
         propose new values and to compute the acceptance rate. See the help of \code{\link{proposal}}. If this
         is not specified and the target is continuous, then the default is an adaptive gaussian random walk.
+    }
+    \item{verbose}{
+        Object of class \code{"logical"}: if TRUE (default) then prints some indication of progress
+        in the console.
     }
 }
 \details{

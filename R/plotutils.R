@@ -16,7 +16,7 @@
 ###################################################
 
 ## convert results to a more proper format for plotting
-ConvertResults <- function(results){
+ConvertResults <- function(results, verbose = TRUE){
     if (!("allchains" %in% names(results))){
         stop("error while converting results: allchains not available\n")
     }
@@ -27,7 +27,7 @@ ConvertResults <- function(results){
     targetdim <- dim(allchains)[3]
     indexchain <- 0
     library(foreach)
-    print("converting chains before plotting...")
+    if (verbose) print("converting chains before plotting...")
     df <- foreach (indexchain = 1:(nbchains), .combine = rbind) %do% {
         subchains <- as.data.frame(allchains[,indexchain,])
         names(subchains) <- paste("X", 1:targetdim, sep = "")
@@ -37,7 +37,7 @@ ConvertResults <- function(results){
         subchains
     }
     df$indexchain <- factor(df$indexchain)
-    print("...done")
+    if (verbose) print("...done")
     return(df)
 }
 

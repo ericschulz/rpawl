@@ -4,23 +4,26 @@
     Convert Results
 }
 \description{
-    Convert results from \code{\link{pawl}} and \code{\link{pawl}}. The result is a
-    data set that is more convenient to use with \code{"ggplot2"} functions. Essentially
-    it concatenates the parallel chains in a single column, and adds a column
-    with the associated log density values.
-    If more than 1000 parallel chains are used, the function can take some time to return
-    its output.}
+    Convert results from \code{\link{pawl}} and \code{\link{adaptiveMH}}. The result is a
+    data set that is more convenient to use with \code{"ggplot2"} functions.}
 \usage{
-    ConvertResults(results)
+    ConvertResults(results, verbose)
 }
 \arguments{
     \item{results}{
         Object of class \code{"list"}: either the output of \code{\link{pawl}} or of \code{\link{adaptiveMH}}.
     }
+    \item{verbose}{
+        Object of class \code{"logical"}: if TRUE (default) then prints some indication of progress
+        in the console.
+    }
 }
 \details{
-    This distribution is a mixture of three bivariate Gaussian distributions. Their covariance matrices are such that
-    an adaptive MCMC algorithm which proposal variance adapts to one of the component, will likely fail to explore the others.
+Essentially
+    it concatenates the parallel chains in a single column, and adds a column
+    with the associated log density values.
+    If more than 1000 parallel chains are used, the function can take some time to return
+    its output.
 }
 \value{
     The function returns an object of class \code{"data.frame"}, with columns for the chain indices, the chain values,

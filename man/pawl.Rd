@@ -8,7 +8,7 @@
     Implements the Parallel Adaptive Wang-Landau algorithm.
 }
 \usage{
-    pawl(target, binning, AP, proposal)
+    pawl(target, binning, AP, proposal, verbose)
 }
 \arguments{
     \item{target}{Object of class \code{\link{target}}: specifies the target distribution.
@@ -23,6 +23,10 @@
     \item{proposal}{Object of class \code{\link{proposal}}: specifies the proposal distribution to be used to 
         propose new values and to compute the acceptance rate. See the help of \code{\link{proposal}}. If this
         is not specified and the target is continuous, then the default is an adaptive gaussian random walk.
+    }
+    \item{verbose}{
+        Object of class \code{"logical"}: if TRUE (default) then prints some indication of progress
+        in the console.
     }
 }
 %\details{

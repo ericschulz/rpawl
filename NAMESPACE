@@ -1,11 +1,12 @@
 useDynLib(PAWL, mixtureloglikelihood, mixturelogpriordensity,
 IsingCounter, IsingUpdate) 
-export(createAdaptiveRandomWalkProposal, createMixtureTarget, createTrimodalTarget, adaptiveMH, preexplorationAMH, pawl,
+export(createAdaptiveRandomWalkProposal, createMixtureTarget, createTrimodalTarget, adaptiveMH, preexplorationAMH, 
+pawl, smc, normalizeweight,
 ConvertResults,
 PlotComp1vsComp2, PlotLogTheta, PlotFH, PlotAllVar, PlotDensComp1vsComp2, PlotHist,
 PlotHistBin, PlotNbins,
 getFrequencies)
-exportClasses(target, binning, tuningparameters, proposal)
-exportMethods(target, show, binning, tuningparameters, proposal)
+exportClasses(target, binning, tuningparameters, proposal, smcparameters)
+exportMethods(target, show, binning, tuningparameters, proposal, smcparameters)
 
 

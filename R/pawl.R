@@ -25,8 +25,8 @@ checkFlatHistogram <- function(FHbincount, binning){
 
 ## Particle Wang-Landau function with flat histogram criterion
 ## AP stands for Algorithmic Parameters
-pawl <- function(target, binning, AP, proposal){
-    print("Launching Particle Wang-Landau algorithm ...") 
+pawl <- function(target, binning, AP, proposal, verbose = TRUE){
+    if (verbose) print("Launching Particle Wang-Landau algorithm ...") 
     # Init some algorithmic parameters ...
     nbins <- length(binning@bins)
     # The bias is saved in a matrix but because
@@ -65,7 +65,7 @@ pawl <- function(target, binning, AP, proposal){
     # We keep track of the log densities computed along the iterations ...
     currentlogtarget <- target@logdensity(chains, target@parameters)
     if (AP@computemean){
-        sumchains <- chains
+        sumchains <- matrix(0, nrow = AP@nchains, ncol = target@dimension)
     }
     acceptrates <- rep(0, AP@niterations)
     # Setting the proposal distribution for the MH kernel
@@ -88,7 +88,7 @@ pawl <- function(target, binning, AP, proposal){
     }
     if (target@type == "discrete" & proposal@adaptiveproposal){
         proposal@adaptiveproposal <- FALSE
-        cat("switching off adaptive proposal, because the target is discrete\n")
+        if (verbose) cat("switching off adaptive proposal, because the target is discrete\n")
     }
     # We compute the locations of the chains, that is, in which 
     # bins they are.
@@ -107,15 +107,17 @@ pawl <- function(target, binning, AP, proposal){
     lastSplittime <- 0
     if (AP@saveeverynth > 0){
       nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
-      cat("saving every", AP@saveeverynth, "iterations\n")
+      if (verbose) cat("saving every", AP@saveeverynth, "iterations\n")
       totalsize <- nallchains * AP@nchains * target@dimension
-      cat("hence saving a vector of size", nallchains, "x", AP@nchains, "x", target@dimension, "=", totalsize, "\n")
+      if (verbose)
+          cat("hence saving a vector of size", nallchains, "x", AP@nchains, 
+              "x", target@dimension, "=", totalsize, "\n")
       if (totalsize > 10^8){
-        cat("which bigger than 10^8: you better have a lot of memory available!!\n")
+        if (verbose) cat("which bigger than 10^8: you better have a lot of memory available!!\n")
         suggestedmaxnallchains <- floor((10^8) / (target@dimension * AP@nchains)) + 1
-        cat("you can maybe set saveeverynth to something bigger than ", 
+        if (verbose) cat("you can maybe set saveeverynth to something bigger than ", 
             floor(AP@niterations / suggestedmaxnallchains) + 1, "\n")
-        cat("type anything to continue, or Ctrl-C to abort\n")
+        if (verbose) cat("type anything to continue, or Ctrl-C to abort\n")
         y<-scan(n=1)
       }
       allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
@@ -129,7 +131,7 @@ pawl <- function(target, binning, AP, proposal){
     iterstep <- max(100, AP@niterations / 50)
     for (iteration in 1:AP@niterations){
         if (!(iteration %% iterstep)){
-          cat("iteration", iteration, "/", AP@niterations, "\n")
+          if (verbose) cat("iteration", iteration, "/", AP@niterations, "\n")
         }
         ## Sample new values from the MH kernel targeting the biased distribution ...
         rproposalresults <- rproposal(chains, proposalparam)
@@ -158,7 +160,7 @@ pawl <- function(target, binning, AP, proposal){
             alllogtarget[nstoredchains,] <- currentlogtarget
         }
         allreaction[iteration + 1,] <- currentreaction
-        if (AP@computemean){
+        if (AP@computemean && iteration > AP@computemeanburnin){
             sumchains <- sumchains + chains
         }
         acceptrates[iteration] <- mean(accepts)
@@ -196,22 +198,22 @@ pawl <- function(target, binning, AP, proposal){
         } 
         if (diagnoseactive & binning@alongenergy){
             if (diagnosebincount[nbins] > AP@nchains){
-                cat("right end bin reached: disactivating bin diagnosis\n")
+                if (verbose) cat("right end bin reached: disactivating bin diagnosis\n")
                 diagnoseactive <- FALSE
             }
         }
         if (diagnoseactive & (iteration %% max(100, 1 + floor(AP@niterations / 100)) == 0) &
             iteration < AP@niterations){
-            cat("/** diagnosis at iteration", iteration, "\n")
-            cat("* current number of bins =", nbins, "\n")
+            if (verbose) cat("/** diagnosis at iteration", iteration, "\n")
+            if (verbose) cat("* current number of bins =", nbins, "\n")
             allproportions <- diagnosebincount / sum(diagnosebincount)
             foundbins <- findSkewedBins(binning, 
                                          diagnosehalfleftcount, diagnosebincount)
             skewedbins <- foundbins$skewedbins + 1
             problem_bins <- (binning@desiredfreq - allproportions) / binning@desiredfreq
-            cat("desired freq - proportions:\n", (problem_bins), "\n")
-            cat("* skewed bins:", skewedbins, "\n")
-            cat("* bins with enough points to be split:", 
+            if (verbose) cat("desired freq - proportions:\n", (problem_bins), "\n")
+            if (verbose) cat("* skewed bins:", skewedbins, "\n")
+            if (verbose) cat("* bins with enough points to be split:", 
                 which(diagnosebincount > 10 * AP@nchains), "\n")
             bintosplit <- c()
             if (binning@alongenergy){
@@ -234,7 +236,7 @@ pawl <- function(target, binning, AP, proposal){
                 }
             }
             if (!is.null(bintosplit)){
-                cat("* bins to split:", bintosplit, "\n")
+                if (verbose) cat("* bins to split:", bintosplit, "\n")
                 newcuts <- binning@binmids[bintosplit - 1]
                 foundbins <- list(binsToSplit = bintosplit, newcuts = newcuts)
                 splitresults <- binsplitter(binning, foundbins, 
@@ -272,7 +274,7 @@ pawl <- function(target, binning, AP, proposal){
                 logtheta <- matrix(ncol = nbins, nrow = AP@niterations + 1 - iteration)
                 logtheta[1,] <- splitresults$newthetas
             }
-            cat("*/\n")
+            if (verbose) cat("*/\n")
         }
 
         ## check if flat histogram is reached ...
@@ -280,7 +282,7 @@ pawl <- function(target, binning, AP, proposal){
             FHreached <- checkFlatHistogram(FHbincount, binning)
             enoughElapsedTime <- (iteration >= lastFHtime + binning@minSimEffort)
             if (FHreached && enoughElapsedTime){
-                cat("Flat histogram criterion met at iteration", iteration, "!\n")
+                if (verbose) cat("Flat histogram criterion met at iteration", iteration, "!\n")
                 k <- k + 1
                 khistory <- c(khistory, k)
                 FHtimes <- c(FHtimes, iteration)
@@ -304,7 +306,7 @@ pawl <- function(target, binning, AP, proposal){
     }
     results$allreaction <- allreaction
     if (AP@computemean){
-        results$meanchains <- sumchains / (AP@niterations + 1)
+        results$meanchains <- sumchains / (AP@niterations - AP@computemeanburnin)
     }
     logthetahistory[[length(logthetahistory) + 1]] <- logtheta
     results$logthetahistory <- logthetahistory

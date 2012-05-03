@@ -103,6 +103,10 @@ createMixtureTarget <- function(mixturesample, mixturesize, ncomponents,
     initvalues <- rprior(size, parameters$ncomponents, parameters$hyperparameters)
     return(initvalues)
   }
+  dinit <- function(x, TP){
+    resultsprior <- .Call("mixturelogpriordensity", x, as.numeric(TP$hyperparameters))
+    return(resultsprior)
+  }
   logdensity <- function(x, TP){
     resultsprior <- .Call("mixturelogpriordensity", x, as.numeric(TP$hyperparameters))
     resultslikelihood <- .Call("mixtureloglikelihood", x, TP$mixturesample)
@@ -111,7 +115,7 @@ createMixtureTarget <- function(mixturesample, mixturesize, ncomponents,
     return(results)
   }
   targetinstance <- target(name = paste("mixture with", ncomponents, "components"), dimension = dimension,
-                           rinit = rinit, logdensity = logdensity,
+                           rinit = rinit, dinit = dinit, logdensity = logdensity,
                            parameters = parameters, generate = rmixture)
   return(targetinstance)
 }

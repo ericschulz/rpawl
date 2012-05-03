@@ -1,4 +1,4 @@
-rm(list = ls())
+#rm(list = ls())
 try(detach(package:PAWL, unload = TRUE), silent = TRUE)
 library(PAWL)
 

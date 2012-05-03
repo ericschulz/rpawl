@@ -16,19 +16,19 @@
 ###################################################
 setClass("tuningparameters",
          representation(nchains = "numeric", niterations = "numeric", 
-                        computemean = "logical",
+                        computemean = "logical", computemeanburnin = "numeric",
                         saveeverynth = "numeric"))
 
 setGeneric("tuningparameters", function(...)standardGeneric("tuningparameters"))
 tuningparameters.constructor <- function(..., nchains, niterations, storeall, 
-                                         computemean, saveeverynth){
+                                         computemean, computemeanburnin, saveeverynth){
     if (missing(nchains))
         nchains <- 1
     if (missing(niterations))
         stop(sQuote("niterations"), "has to be specified")
     if (missing(saveeverynth)){
         if (missing(storeall)){
-            cat("storeall unspecified: set to FALSE\n")
+            #cat("storeall unspecified: set to FALSE\n")
             storeall <- FALSE
             saveeverynth <- -1
         } else {
@@ -41,17 +41,23 @@ tuningparameters.constructor <- function(..., nchains, niterations, storeall,
     }
     if (missing(computemean)){
       computemean <- FALSE
-      cat("computemean unspecified: set to FALSE\n")
+      #cat("computemean unspecified: set to FALSE\n")
+    }
+    if (missing(computemeanburnin)){
+        computemeanburnin <- 0
     }
     new("tuningparameters", 
         nchains = nchains, niterations = niterations, 
-        computemean = computemean, saveeverynth = saveeverynth)
+        computemean = computemean, computemeanburnin = computemeanburnin, 
+        saveeverynth = saveeverynth)
 }
 setMethod("tuningparameters",
-          definition = function(..., nchains, niterations, storeall, computemean, saveeverynth){
+          definition = function(..., nchains, niterations, storeall, computemean, 
+                                computemeanburnin, saveeverynth){
               tuningparameters.constructor(
                                nchains = nchains, niterations = niterations, 
                                storeall = storeall, computemean = computemean,
+                               computemeanburnin = computemeanburnin,
                                saveeverynth = saveeverynth)
           })
 
@@ -61,6 +67,7 @@ setMethod(f = "show", signature = "tuningparameters",
               cat("*number of parallel chains:", object@nchains, "\n")
               cat("*number of iterations:", object@niterations, "\n")
               cat("*compute mean:", object@computemean, "\n")
+              cat("*compute mean (burnin):", object@computemeanburnin, "\n")
               cat("*save every nth iteration:", object@saveeverynth, "\n")
           })
 

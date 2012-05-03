@@ -16,23 +16,23 @@
 ###################################################
 ## Adaptive Metropolis-Hastings 
 ## AP stands for Algorithmic Parameters
-adaptiveMH <- function(target, AP, proposal){
-    print("Launching Adaptive Metropolis-Hastings algorithm with parameters:")
-    print(AP)
+adaptiveMH <- function(target, AP, proposal, verbose = TRUE){
+    if (verbose) print("Launching Adaptive Metropolis-Hastings algorithm with parameters:")
+    if (verbose) print(AP)
     acceptrates <- rep(0, AP@niterations)
     chains <- as.matrix(target@rinit(AP@nchains), ncol = target@dimension)
     currentlogtarget <- target@logdensity(chains, target@parameters)
     if (AP@saveeverynth > 0){
       nallchains <- 1 + floor((AP@niterations) / AP@saveeverynth)
-      cat("saving every", AP@saveeverynth, "iterations\n")
+      if (verbose) cat("saving every", AP@saveeverynth, "iterations\n")
       totalsize <- nallchains * AP@nchains * target@dimension
-      cat("hence saving a vector of size", nallchains, "x", AP@nchains, "x", target@dimension, "=", totalsize, "\n")
+      if (verbose) cat("hence saving a vector of size", nallchains, "x", AP@nchains, "x", target@dimension, "=", totalsize, "\n")
       if (totalsize > 10^8){
-        cat("which bigger than 10^8: you better have a lot of memory available!!\n")
+        if (verbose) cat("which bigger than 10^8: you better have a lot of memory available!!\n")
         suggestedmaxnallchains <- floor((10^8) / (target@dimension * AP@nchains)) + 1
-        cat("you can maybe set saveeverynth to something bigger than ", 
+        if (verbose) cat("you can maybe set saveeverynth to something bigger than ", 
             floor(AP@niterations / suggestedmaxnallchains) + 1, "\n")
-        cat("type anything to continue, or Ctrl-C to abort\n")
+        if (verbose) cat("type anything to continue, or Ctrl-C to abort\n")
         y<-scan(n=1)
       }
       allchains <- array(NA, dim = c(nallchains, AP@nchains, target@dimension))
@@ -42,8 +42,9 @@ adaptiveMH <- function(target, AP, proposal){
     alllogtarget <- matrix(NA, nrow = AP@niterations + 1, ncol = AP@nchains)
     alllogtarget[1,] <- currentlogtarget
     if (AP@computemean){
-        sumchains <- chains
+        sumchains <- matrix(0, nrow = AP@nchains, ncol = target@dimension)
     }
+
     # Setting the proposal distribution for the MH kernel
     if (missing(proposal) & target@type == "continuous"){
         proposal <- createAdaptiveRandomWalkProposal(nchains = AP@nchains, 
@@ -59,14 +60,14 @@ adaptiveMH <- function(target, AP, proposal){
     }
     if (target@type == "discrete" & proposal@adaptiveproposal){
         proposal@adaptiveproposal <- FALSE
-        cat("switching off adaptive proposal, because the target is discrete\n")
+        if (verbose) cat("switching off adaptive proposal, because the target is discrete\n")
     }
     iterstep <- max(100, AP@niterations / 50)
     for (iteration in 1:AP@niterations){
         ## at each time...
         #cat("iteration:", iteration, "\n")
         if (!(iteration %% iterstep)){
-            cat("Iteration", iteration, "/", AP@niterations, "\n")
+            if (verbose) cat("Iteration", iteration, "/", AP@niterations, "\n")
         }
         ## sample new chains from the MH kernel ...
         rproposalresults <- rproposal(chains, proposalparam)
@@ -93,7 +94,7 @@ adaptiveMH <- function(target, AP, proposal){
             allchains[nstoredchains,,] <- chains
         }
         alllogtarget[iteration + 1,] <- currentlogtarget
-        if (AP@computemean){
+        if (AP@computemean && iteration > AP@computemeanburnin){
             sumchains <- sumchains + chains
         }
     }
@@ -106,7 +107,7 @@ adaptiveMH <- function(target, AP, proposal){
     }
     results$alllogtarget <- alllogtarget
     if (AP@computemean)
-        results$meanchains <- sumchains / (AP@niterations + 1)
+        results$meanchains <- sumchains / (AP@niterations - AP@computemeanburnin)
     return(results)
 }
 

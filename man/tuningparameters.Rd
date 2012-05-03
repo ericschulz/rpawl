@@ -21,6 +21,9 @@ Objects can be created by calls of the function \code{"tuningparameters"}.
     representing the desired number of iterations.}
     \item{\code{computemean}:}{Object of class \code{"logical"}: specifies whether the mean of all chains should
         be computed at each iteration (useful if the chains are not to be stored).}
+    \item{\code{computemeanburnin}:}{Object of class \code{"numeric"}: 
+        if \code{computemean} is set to TRUE, specifies after which iteration the mean of the chain has
+        to be computed. Default is 0 (no burnin).}
     \item{\code{saveeverynth}:}{Object of class \code{"numeric"}: specifies when the chains are to be stored:
     for instance at every iteration (=1), every 10th iteration (=10), etc. Default is -1, meaning the chains are not stored.}
   }
