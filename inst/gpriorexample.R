@@ -31,7 +31,7 @@ rInitDistribution <- function(size){
 
 lpostw <- function(gammaVS, tp){  
     # Xt1 is the matrix of the selected covariates (selected gammaVS == 1)
-    Xt1 <- tp$X[, gammaVS==1]
+    Xt1 <- as.matrix(tp$X[, gammaVS==1])
     # creating n x n matrix denoted by P1
     if (sum(gammaVS) != 0){
         #P1 <- Xt1 %*% solve(t(Xt1) %*% Xt1) %*% t(Xt1)
