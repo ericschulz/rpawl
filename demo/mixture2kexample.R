@@ -23,12 +23,14 @@ print(pawlparameters)
 pawlresults <- pawl(mixture, binning = betabinning, AP = pawlparameters)
 chains <- ConvertResults(pawlresults)
 getFrequencies(pawlresults, betabinning)
-#print(PlotHistBin(pawlresults, betabinning))
-
-##X11()
-#print(PlotLogTheta(pawlresults))
+## Plot the reaction coordinate values along the binning axis,
+## with red vertical lines denoting the endpoints of the bins
+# print(PlotHistBin(pawlresults, betabinning))
+## Plot the log penalties associated with each bin
+# print(PlotLogTheta(pawlresults))
+## Plot sigma versus iterations, where sigma is 
+## the vector of the standard deviations used by the MH kernel along the iterations.
 #plot(pawlresults$sigma, type = "l")
-##X11()
 #PlotAllVar(chains)
 #X11()
 print(PlotComp1vsComp2(chains, "X3", "X4"))
@@ -43,7 +45,7 @@ print(PlotComp1vsComp2(chains, "X3", "X4"))
 #                                c(pawlresults$nbins, max(pawlresults$nbins))))
 #g <- ggplot(binincrease, aes(x = X1, y = X2)) + geom_step()
 #g <- g + ylim(0, 1.5 * max(pawlresults$nbins)) + ylab("Number of bins") + xlab("iterations")
-#g <- g + opts(title = "Number of bins along the iterations")
+#g <- g + theme(title = "Number of bins along the iterations")
 #print(g)
 
 

@@ -1,15 +1,15 @@
 library(ggplot2)
 theme_update(
-axis.title.x = theme_text(size=25),
-axis.title.y = theme_text(size=25, angle = 90),
-axis.text.x = theme_text(size=25),
-axis.text.y = theme_text(size=25),
-strip.text.x = theme_text(size=25),
-strip.text.y = theme_text(size=25),
-plot.title = theme_text(size=25),
-legend.text = theme_text(size=25),
-legend.title = theme_text(size=25),
-strip.background = theme_rect(fill = "whitesmoke"))
+axis.title.x = element_text(size=25),
+axis.title.y = element_text(size=25, angle = 90),
+axis.text.x = element_text(size=25),
+axis.text.y = element_text(size=25),
+strip.text.x = element_text(size=25),
+strip.text.y = element_text(size=25),
+plot.title = element_text(size=25),
+legend.text = element_text(size=25),
+legend.title = element_text(size=25),
+strip.background = element_rect(fill = "whitesmoke"))
 
 
 rm(list = ls())
@@ -58,7 +58,7 @@ maxnumberpoints <- 50000
 subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
 g <- ggplot(subchains, aes(x = X1, y = X2))
 g <- g + stat_bin2d() + geom_density2d()
-g <- g + opts(legend.position = "none")
+g <- g + theme(legend.position = "none")
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 #pdf(file = "Trimodal2Ddensity.pdf")
 #print(g)
@@ -67,7 +67,7 @@ g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
 g <- ggplot(data = subchains, aes(x = X1, y = X2))
 g <- g + geom_point(aes(alpha = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
-g <- g + opts(legend.position = "none")
+g <- g + theme(legend.position = "none")
 g <- g + xlim(-15, 15) + ylim(-15, 15)
 #ggsave(g, file = "TrimodalCloud.png")
 
@@ -95,7 +95,7 @@ g <- ggplot(subset(df, iterations < st[length(st)-1] + 200), aes(x = iterations,
 g <- ggplot(df, aes(x = iterations, y = value, colour = estimator))
 g <- g + geom_line() 
 g <- g + geom_vline(xintercept = pawlresults$splitTimes, linetype = 1)
-g <- g + opts(legend.position = "none")
+g <- g + theme(legend.position = "none")
 #g <- g + xlim(0, st[length(st)-1] + 200)
 #pdf(file = "TrimodalLogThetasSplit.pdf", )
 #pdf(file = "TrimodalLogThetasSplit.pdf", width = 21, height = 7)
@@ -140,7 +140,7 @@ iterstep <- floor(dim(df)[1] / maxnumberpoints) + 1
 g <- ggplot(subset(df, iterations %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
 g <- g + geom_line() + scale_y_log10()
 g <- g + geom_hline(yintercept = truethetas, linetype = 3)
-g <- g + opts(legend.position = "none")
+g <- g + theme(legend.position = "none")
 g <- g + xlim(st[length(st) - 1], T)
 #pdf(file = "TrimodalLogThetasStable.pdf")
 #print(g)
@@ -157,10 +157,10 @@ g <- ggplot(data = subset(positions, index > npoints - maxnumberpoints), aes(x =
 g <- g + geom_histogram(binwidth = 0.025, aes(y = ..density..))
 g <- g + geom_vline(xintercept = densitybinning@bins[-1], size = 2)
 g <- g + geom_vline(xintercept = pawlresults$finalbins[-1], linetype = 2, size = 2)
-%pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
-%print(g)
-%dev.off()
-%
+#pdf(file = "TrimodalHistogramBins.pdf", width = 21, height = 7)
+#print(g)
+#dev.off()
+
 
 #### And now the adaptive MCMC with the same number of target density
 #### evaluations. Since we don't use a preliminary exploration here,
@@ -195,7 +195,7 @@ subchains <- subset(subchains, index > totalnpoints - maxnumberpoints)
 g <- ggplot(data = subchains, aes(x = X1, y = X2))
 g <- g + geom_point(aes(alpha = logdens))  
 g <- g + xlab(expression(X[1])) + ylab(expression(X[2]))
-g <- g + opts(legend.position = "none")
+g <- g + theme(legend.position = "none")
 g <- g + xlim(-15, 15) + ylim(-15, 15)
 #ggsave(g, file = "TrimodalCloudAMH.png")
 

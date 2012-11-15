@@ -26,8 +26,8 @@ PlotComp1vsComp2(results, comp1, comp2)
 }
 
 \author{
-  Luke Bornn <l.bornn@stat.ubc.ca>,
-  Pierre Jacob <pierre.jacob@ensae.fr>
+  Luke Bornn <bornn@stat.harvard.edu>,
+  Pierre E. Jacob <pierre.jacob.work@gmail.com>
 }
 
 \seealso{

@@ -27,17 +27,17 @@ smc(target, AP, verbose)
 %}
 \value{
     The function returns a list holding various information:
-    \item{particles}{}
-    \item{weights}{}
-    \item{ESSarray}{}
-    \item{resamplingtimes}{}
+    \item{particles}{a matrix with rows representing particles and columns components of each particle.}
+    \item{weights}{a vector of weights associated to each particle. See also the convenience function \code{\link{normalizeweight}}.}
+    \item{ESSarray}{a vector of the ESS computed at each iteration.}
+    \item{resamplingtimes}{a vector indicating the iteration at which resampling was performed.}
 }
 %\references{
 %%% ~put references to the literature/web site here ~
 %}
 \author{
-    Luke Bornn <l.bornn@stat.ubc.ca>,
-    Pierre Jacob <pierre.jacob@ensae.fr>
+    Luke Bornn <bornn@stat.harvard.edu>,
+    Pierre E. Jacob <pierre.jacob.work@gmail.com>
 }
 %\note{
 %%%  ~~further notes~~

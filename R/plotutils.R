@@ -60,7 +60,7 @@ PlotComp1vsComp2 <- function(results, comp1, comp2 ){
     g <- ggplot(data = subchains, aes_string(x = comp1, y = comp2))
     g <- g + geom_point(aes(alpha = logdens, size = logdens, colour = logdens))  
     g <- g + xlab(comp1) + ylab(comp2)
-    g <- g + opts(title = paste(comp1, "versus", comp2))
+    g <- g + labs(title = paste(comp1, "versus", comp2))
     return(g)
 }
 
@@ -82,7 +82,7 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
     library(ggplot2)
     g <- ggplot(subchains, aes_string(x = comp1, y = comp2))
     g <- g + stat_bin2d() + geom_density2d()
-    g <- g + opts(title = "2D density")
+    g <- g + theme(title = "2D density")
     return(g)
 }
 
@@ -114,7 +114,7 @@ PlotLogTheta <- function(results){
   g <- ggplot(subset(df, i %% iterstep == 0), aes(x = iterations, y = value, colour = estimator))
   g <- g + geom_line()
   g <- g + geom_vline(xintercept = results$splitTimes, linetype = 1)
-  g <- g + opts(legend.position = "none")
+  g <- g + theme(legend.position = "none")
   return(g)
 }     
 
@@ -128,7 +128,7 @@ PlotFH <- function(results){
     library(ggplot2)
     g <- ggplot(kincrease, aes(x = times, y = ks)) + geom_step()
     g <- g + xlab("iterations") + ylab("k")
-    g <- g + opts(title = "Number of flat histogram criteria met along the iterations")
+    g <- g + theme(title = "Number of flat histogram criteria met along the iterations")
     return(g)
 }
 
@@ -141,7 +141,7 @@ PlotNbins <- function(results){
         g <- ggplot(binincrease, aes_string(x = "X1", y = "X2")) + geom_step()
         g <- g + ylim(0, 1.5 * results$nbins[length(results$nbins)])
         g <- g + ylab("Number of bins") + xlab("iterations")
-        g <- g + opts(title = "Number of bins along the iterations")
+        g <- g + theme(title = "Number of bins along the iterations")
         return(g)
     } else {
         return(paste("number of bins always was equal to", length(results$finalbins)))
@@ -165,9 +165,9 @@ PlotAllVar <- function(results){
     library(ggplot2)
     meltedchains <- melt(chains[,!(names(chains) %in% c("logdens"))], id = c("iterations", "indexchain"))
     g <- ggplot(subset(meltedchains, iterations %% iterstep == 0), aes(x = iterations, y = value, colour = indexchain))
-    g <- g + geom_line() + facet_wrap( ~ variable) + opts(axis.text.x = theme_text(angle = -45, size = 20))
-    g <- g + opts(legend.position = "none")
-    g <- g + opts(title = "Trace plot of the chains")
+    g <- g + geom_line() + facet_wrap( ~ variable) + theme(axis.text.x = element_text(angle = -45, size = 20))
+    g <- g + theme(legend.position = "none")
+    g <- g + labs(title = "Trace plot of the chains")
     return(g)
 }
 

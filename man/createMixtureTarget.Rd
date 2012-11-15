@@ -33,8 +33,8 @@ Richardson and Green, "On Bayesian
     analysis of mixtures with an unknown number of components", published in JRSS B, 1997.
 }
 \author{
-    Luke Bornn <l.bornn@stat.ubc.ca>,
-    Pierre Jacob <pierre.jacob@ensae.fr>
+    Luke Bornn <bornn@stat.harvard.edu>,
+    Pierre E. Jacob <pierre.jacob.work@gmail.com>
 }
 %\note{
 %%%  ~~further notes~~

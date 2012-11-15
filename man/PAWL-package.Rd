@@ -24,8 +24,8 @@ The main function is \code{pawl}. It takes algorithmic parameters in arguments (
 as well a target distribution. Look at the demos to learn how to specify a target distribution.
 }
 \author{
-    Luke Bornn <l.bornn@stat.ubc.ca>,
-Pierre Jacob <pierre.jacob@ensae.fr>
+    Luke Bornn <bornn@stat.harvard.edu>,
+Pierre E. Jacob <pierre.jacob.work@gmail.com>
 }
 %\references{
 %  Reference to the article.

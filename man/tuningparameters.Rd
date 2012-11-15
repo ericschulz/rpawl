@@ -6,7 +6,7 @@
 \alias{tuningparameters,ANY-method}
 \alias{show,tuningparameters-method}
 
-\title{Class \code{"tuningparameters"}}
+\title{MCMC Tuning Parameters}
 \description{
     This class holds tuning parameters for the Metropolis-Hastings and Wang-Landau algorithms.
 }
@@ -37,8 +37,8 @@ Objects can be created by calls of the function \code{"tuningparameters"}.
 %%  ~~put references to the literature/web site here~~
 %}
 \author{
-  Luke Bornn <l.bornn@stat.ubc.ca>,
-    Pierre Jacob <pierre.jacob@ensae.fr>
+  Luke Bornn <bornn@stat.harvard.edu>,
+    Pierre E. Jacob <pierre.jacob.work@gmail.com>
 }
 %\note{
 %%  ~~further notes~~
@@ -49,6 +49,7 @@ Objects can be created by calls of the function \code{"tuningparameters"}.
 \seealso{
 \code{\link{adaptiveMH}}
 \code{\link{preexplorationAMH}}
+\code{\link{pawl}}
 }
 \examples{
 showClass("tuningparameters")
