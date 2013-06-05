@@ -25,6 +25,55 @@ checkFlatHistogram <- function(FHbincount, binning){
 
 ## Particle Wang-Landau function with flat histogram criterion
 ## AP stands for Algorithmic Parameters
+
+
+#'Parallel Adaptive Wang-Landau
+#'
+#'Implements the Parallel Adaptive Wang-Landau algorithm.
+#'
+#'
+#'@param target Object of class \code{\link{target}}: specifies the target
+#'distribution.  See the help of \code{\link{target}}. If the target is
+#'discrete, target must contain the slots \code{dproposal}, \code{rproposal}
+#'and \code{proposalparam} that specify the proposal kernel in the
+#'Metropolis-Hastings step. Otherwise the default is an adaptive gaussian
+#'random walk.
+#'@param binning Object of class \code{\link{binning}}, defining the initial
+#'bins used by the Wang-Landau algorithm.  The binning object also contains
+#'some parameters specifying if the automatic binning mechanism is active or
+#'not, for instance.
+#'@param AP Object of class \code{\link{tuningparameters}}: specifies the
+#'number of chains, the number of iterations, and what should be stored during
+#'along the run. See the help of \code{\link{tuningparameters}}.
+#'@param proposal Object of class \code{\link{proposal}}: specifies the
+#'proposal distribution to be used to propose new values and to compute the
+#'acceptance rate. See the help of \code{\link{proposal}}. If this is not
+#'specified and the target is continuous, then the default is an adaptive
+#'gaussian random walk.
+#'@param verbose Object of class \code{"logical"}: if TRUE (default) then
+#'prints some indication of progress in the console.
+#'@return The function returns a list holding various information:
+#'
+#'and other quantities, that you can browse by calling \code{"names(results)"}
+#'where \code{"results"} is the output of the function.
+#'\itemize{
+#'\item finalchains The last point of each chain.
+#'\item acceptrates The vector of acceptance rates at each step.
+#'\item sigma The vector of the standard deviations used by the MH kernel
+#'along the iterations. If the proposal was adaptive, this allows to check how
+#'the adaptation behaved.
+#'\item allchains If asked in the tuning parameters, the chain history.
+#'\item alllogtarget If asked in the tuning parameters, the associated
+#'log density evaluations.
+#'\item meanchains If asked in the tuning parameters, the mean
+#'(component-wise) of each chain.
+#'\item logthetahistory If asked in the tuning parameters, all the log
+#'theta penalties.
+#'}
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{adaptiveMH}, \link{binning}}
+#'@keywords ~kwd1 ~kwd2
 pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     if (verbose) print("Launching Particle Wang-Landau algorithm ...") 
     # Init some algorithmic parameters ...
@@ -313,6 +362,27 @@ pawl <- function(target, binning, AP, proposal, verbose = TRUE){
     return(results)
 }
 
+
+
+#'Observed Frequencies in each bin.
+#'
+#'This function provides a convenient way to check whether the target
+#'frequencies have been reached.  Since new bins can be created during the
+#'algorithm, this function aggregates them in the right way so that the user
+#'can know if the initial bins (on which the desired frequencies were
+#'specified) have been visited enough.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param binning Object of class \code{\link{binning}}: the binning on which
+#'the frequencies have to be computed.
+#'@return The function is supposed to be used for the lines that it prints in
+#'the console.  However it also returns a vector of sampling frequencies
+#'corresponding to the initial bins.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{pawl}}
 getFrequencies <- function(results, binning){
     allproportions <- tabulate(binning@getLocations(results$finalbins, 
                       c(results$allreaction)), nbins = length(results$finalbins))

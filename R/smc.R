@@ -36,6 +36,24 @@ fastlogdmvnorm <- function(x, mu, Sigma){
 ################################################
 
 ## Takes weights on the log scale and returns normalized weights
+
+
+#'Normalize weights
+#'
+#'Simple function that normalize vectors (ie takes log weights and returns
+#'normalized weights, in the SMC context).
+#'
+#'Simple function that takes log weights (ie any real-valued vector), computes
+#'the exponential of it, divides it by its sum and returns it.
+#'
+#'@param log_weights Object of class \code{"numeric"}: a real-valued vector
+#'@return The function returns an object of class \code{"data.frame"}, with
+#'columns for the chain indices, the chain values, the iteration indices, and
+#'the associated log density values.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{smc}}
+#'@keywords ~kwd1 ~kwd2
 normalizeweight <- function(log_weights){
   corrected_log_weights <- log_weights - max(log_weights)
   normalized_weights <- exp(corrected_log_weights) / sum(exp(corrected_log_weights))
@@ -88,6 +106,35 @@ ESSfunction <- function(normalized_weights){
 }
 
 #### Sequential Monte Carlo sampler on a sequence of tempered target distributions
+
+
+#'Sequential Monte Carlo
+#'
+#'Sequential Monte Carlo samplers, using a sequence of tempered distributions.
+#'
+#'
+#'@param target Object of class \code{\link{target}}: specifies the target
+#'distribution.  See the help of \code{\link{target}}. The target must be
+#'defined on a continuous state space.
+#'@param AP Object of class \code{"smcparameters"}: specifies the number of
+#'particles, the ESS threshold, the sequence of distributions, etc. See the
+#'help of \code{\link{smcparameters}}.
+#'@param verbose Object of class \code{"logical"}: if TRUE (default) then
+#'prints some indication of progress in the console.
+#'@return The function returns a list holding various information:
+#'\itemize{
+#'\item particles a matrix with rows representing particles and columns
+#'components of each particle.
+#'\item weights a vector of weights associated to each particle. See also
+#'the convenience function \code{\link{normalizeweight}}.
+#'\item ESSarray a vector of the ESS computed at each iteration.
+#'\item resamplingtimes a vector indicating the iteration at which
+#'resampling was performed.
+#'}
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{smcparameters}}
+#'@keywords ~kwd1 ~kwd2
 smc <- function(target, AP, verbose = TRUE){
   if (verbose) print("Launching SMC with parameters:")
   if (verbose) print(AP)

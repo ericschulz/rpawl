@@ -16,6 +16,29 @@
 ###################################################
 
 ## convert results to a more proper format for plotting
+
+
+#'Convert Results
+#'
+#'Convert results from \code{\link{pawl}} and \code{\link{adaptiveMH}}. The
+#'result is a data set that is more convenient to use with \code{"ggplot2"}
+#'functions.
+#'
+#'Essentially it concatenates the parallel chains in a single column, and adds
+#'a column with the associated log density values.  If more than 1000 parallel
+#'chains are used, the function can take some time to return its output.
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param verbose Object of class \code{"logical"}: if TRUE (default) then
+#'prints some indication of progress in the console.
+#'@return The function returns an object of class \code{"data.frame"}, with
+#'columns for the chain indices, the chain values, the iteration indices, and
+#'the associated log density values.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{adaptiveMH}}, \code{\link{pawl}}
+#'@keywords ~kwd1 ~kwd2
 ConvertResults <- function(results, verbose = TRUE){
     if (!("allchains" %in% names(results))){
         stop("error while converting results: allchains not available\n")
@@ -42,6 +65,25 @@ ConvertResults <- function(results, verbose = TRUE){
 }
 
 ## Plot of one component against another
+
+
+#'Plot one component versus another in a scatter plot
+#'
+#'This function takes the result of \code{\link{adaptiveMH}} or of
+#'\code{\link{pawl}}, and component indices, and draws a cloud of points with
+#'the first component on the x-axis and the second on the y-axis.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param comp1 Object of class \code{"numeric"}: specifies the index of the
+#'component to plot on the x-axis.
+#'@param comp2 Object of class \code{"numeric"}: specifies the index of the
+#'component to plot on the y-axis.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotComp1vsComp2 <- function(results, comp1, comp2 ){
     if ("indexchain" %in% names(results)){
         chains <- results
@@ -65,6 +107,25 @@ PlotComp1vsComp2 <- function(results, comp1, comp2 ){
 }
 
 ## 2D density plot of one component against another
+
+
+#'Plot one component versus another in a density plot
+#'
+#'This function takes the result of \code{\link{adaptiveMH}} or of
+#'\code{\link{pawl}}, and component indices, and draws a 2D density plot with
+#'the first component on the x-axis and the second on the y-axis.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param comp1 Object of class \code{"numeric"}: specifies the index of the
+#'component to plot on the x-axis.
+#'@param comp2 Object of class \code{"numeric"}: specifies the index of the
+#'component to plot on the y-axis.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotDensComp1vsComp2 <- function(results, comp1, comp2){
     if ("indexchain" %in% names(results)){
         chains <- results
@@ -87,6 +148,20 @@ PlotDensComp1vsComp2 <- function(results, comp1, comp2){
 }
 
 ## Plot of the log theta since the last bin split
+
+
+#'Plot of the log theta penalties
+#'
+#'This function takes the result of \code{\link{pawl}}, and draws a trace plot
+#'of the log theta penalties along the iterations.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotLogTheta <- function(results){
   st <- results$splitTimes
   T <- length(results$acceptrates)
@@ -119,6 +194,20 @@ PlotLogTheta <- function(results){
 }     
 
 ## Plot of the temperature k
+
+
+#'Plot of the Flat Histogram occurrences
+#'
+#'This function takes the result of \code{\link{pawl}}, and draws a plot of the
+#'occurrences of the Flat Histogram criteria along the iterations.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotFH <- function(results){
     T <- length(results$acceptrates)
     times <- c(1, results$FHtimes, T)
@@ -134,6 +223,20 @@ PlotFH <- function(results){
 
 ## Plot of the number of bins
 #### WHAT THE HELL GOES WRONG HERE??
+
+
+#'Plot of the increase of the number of bins along the iterations
+#'
+#'This function takes the result of \code{\link{pawl}}, and draws a plot of the
+#'increase of the number of bins along the iterations.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotNbins <- function(results){
     if (!(is.null(results$splitTimes))){
         binincrease <- data.frame(cbind(c(1, results$splitTimes, T), 
@@ -149,6 +252,20 @@ PlotNbins <- function(results){
 }
 
 ## Trace plot of all the variables
+
+
+#'Trace plot of all the variables
+#'
+#'This function takes the result of \code{\link{adaptiveMH}} or of
+#'\code{\link{pawl}}, and draws a trace plot for each component of the chains
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotAllVar <- function(results){
     if ("indexchain" %in% names(results)){
         chains <- results
@@ -172,6 +289,22 @@ PlotAllVar <- function(results){
 }
 
 ## Simple histogram of one component
+
+
+#'Plot a histogram of one component of the chains
+#'
+#'This function takes the result of \code{\link{adaptiveMH}} or of
+#'\code{\link{pawl}}, and a component index, and draws a histogram of it.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param component Object of class \code{"numeric"}: specifies the index of the
+#'component to plot on the x-axis.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotHist <- function(results, component){
     if ("indexchain" %in% names(results)){
         chains <- results
@@ -185,6 +318,23 @@ PlotHist <- function(results, component){
 }
 
 ## Simple histogram of the binned component 
+
+
+#'Plot a histogram of the binning coordinate
+#'
+#'This function takes the result of \code{\link{adaptiveMH}} or of
+#'\code{\link{pawl}}, and a \code{\link{binning}} object, and draws a histogram
+#'of the chains according to the binning coordinate.
+#'
+#'
+#'@param results Object of class \code{"list"}: either the output of
+#'\code{\link{pawl}} or of \code{\link{adaptiveMH}}.
+#'@param binning Object of class \code{\link{binning}}, defining the initial
+#'bins used by the Wang-Landau algorithm.
+#'@return The function returns a ggplot2 object.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{ggplot}}
 PlotHistBin <- function(results, binning){
     if ("indexchain" %in% names(results)){
         chains <- results

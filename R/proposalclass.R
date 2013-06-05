@@ -78,6 +78,37 @@ setMethod(f = "show", signature = "proposal",
             cat("adaptive proposal:", object@adaptiveproposal, "\n")
           })
 
+
+
+#'Adaptive Random Walk proposal distribution for MCMC algorithms
+#'
+#'Create the adaptive gaussian random walk proposal that is used as a default
+#'in \code{\link{adaptiveMH}} and \code{\link{pawl}}, whenever the target
+#'distribution is continuous.
+#'
+#'
+#'@param nchains Object of class \code{"numeric"}: it should be an integer
+#'representing the desired number of parallel chains.
+#'@param targetdimension Object of class \code{"numeric"}: it should be an
+#'integer representing the dimension of the target distribution.
+#'@param adaptiveproposal Object of class \code{"logical"}: specifies whether
+#'an adaptive proposal (Robbins-Monroe type of adaptation) should be used.
+#'Default is FALSE.
+#'@param adaptationrate Object of class \code{"function"}: specifies the rate
+#'at which the adaptation of the proposal is performed. It should be a function
+#'defined on [0, + infty[ such that it is not integrable but its square is
+#'integrable, e.g. t -> 1/t for instance. The default is t -> t^-0.6.
+#'@param sigma_init Object of class \code{"numeric"}: it should be a positive
+#'real number specifying the standard deviation of the proposal distribution at
+#'the first iteration. If the proposal is adaptive, it acts as a starting point
+#'for the adaptation. If it is not adaptive, then this value is used throughout
+#'all the iterations. Default is 1.
+#'@return The function returns an object of class \code{\link{proposal-class}},
+#'to be used in calls to \code{\link{adaptiveMH}} and \code{\link{pawl}}.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{proposal-class}}, \code{\link{adaptiveMH}},
+#'\code{\link{pawl}}
 createAdaptiveRandomWalkProposal <- function(nchains, targetdimension, adaptiveproposal,
                                        adaptationrate, sigma_init){
     if (missing(adaptiveproposal)){

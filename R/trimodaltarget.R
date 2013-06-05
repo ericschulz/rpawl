@@ -7,6 +7,27 @@ fastdmvnorm <- function(x, mu, Sigma){
     return(exp(logretval))
 }
 
+
+
+#'Trimodal target distribution
+#'
+#'Create the trimodal distribution as in Liang, Liu and Caroll, 2007:
+#'Stochastic approximation in Monte Carlo computation.
+#'
+#'This distribution is a mixture of three bivariate Gaussian distributions.
+#'Their covariance matrices are such that an adaptive MCMC algorithm which
+#'proposal variance adapts to one of the component, will likely fail to explore
+#'the others.
+#'
+#'@return The function returns an object of class \code{\link{target}}, with a
+#'name, a dimension, a function giving the log density, a function to generate
+#'sample from the distribution, parameters of the distribution, and a function
+#'to draw init points for the MCMC algorithms.
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@seealso \code{\link{target}}, \code{\link{createMixtureTarget}}
+#'@references Liang, Liu and Caroll: Stochastic approximation in Monte Carlo
+#'computation. Published in JASA, 2007.
 createTrimodalTarget <- function(){
   rinit <- function(size){
   fastrmvnorm(n = size, mu = c(0, 0), sigma =  diag(c(0.1, 0.1)))
