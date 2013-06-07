@@ -14,6 +14,41 @@
 #    You should have received a copy of the GNU General Public License
 #    along with RPAWL.  If not, see <http://www.gnu.org/licenses/>.
 ###################################################
+#'Class \code{"proposal"}
+#'
+#'This class holds a proposal distribution to be used in a Metropolis-Hastings kernel.
+#'@rdname proposal
+#'@name proposal
+#'@aliases proposal-class proposal proposal-methods proposal-method
+#'proposal,ANY-method show,proposal-method
+#'@docType class
+#'@section Objects from the class:
+#'Objects should created by calls of the function \code{proposal}.
+#'
+#' @section Important slots:
+#' \itemize{
+#'     \item \code{rproposal} Object of class \code{"function"}
+#'     \item \code{dproposal} Object of class \code{"function"}
+#'}
+#' @section Optional slots:
+#' \itemize{
+#'     \item \code{proposalparam} Object of class \code{"list"}
+#'     \item \code{adaptiveproposal} Object of class \code{"logical"}
+#'     \item \code{adaptationrate} Object of class \code{"function"}
+#'     \item \code{sigma_init} Object of class \code{"numeric"}
+#'}
+#'@section Methods:
+#'  \describe{
+#'    \item{show}{\code{signature(object = "proposal")}: provides a little summary of a proposal object when called (or when \code{print} is called).}
+#'  }
+#'@author Luke Bornn <bornn@@stat.harvard.edu>, Pierre E. Jacob
+#'<pierre.jacob.work@@gmail.com>
+#'@keywords classes
+#'
+NULL
+
+
+
 #### the standard dmvnorm is slow because it checks a lot of thing (like is Sigma symmetric)
 ### Fast rmvnorm
 fastrmvnorm <- function(n, mu, sigma = diag(length(mu))){
